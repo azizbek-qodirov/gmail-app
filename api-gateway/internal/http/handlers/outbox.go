@@ -1,0 +1,238 @@
+package handlers
+
+import (
+	"api-gateway/internal/pkg/config"
+	pb "api-gateway/internal/pkg/genproto"
+
+	"net/http"
+	"strconv"
+
+	"github.com/gin-gonic/gin"
+)
+
+// SendMessage godoc
+// @Summary Send a new message
+// @Description Sends a new message to the specified recipients.
+// @Tags 06-Outbox
+// @Accept json
+// @Produce json
+// @Param message body pb.OutboxMessageSentReq true "Message sending request"
+// @Success 201 {object} pb.MessageSentRes "Message sent successfully"
+// @Failure 400 {object} string "Invalid request payload"
+// @Failure 401 {object} string "Unauthorized"
+// @Failure 500 {object} string "Server error"
+// @Security BearerAuth
+// @Router /outbox [post]
+func (h *HTTPHandler) SendMessage(c *gin.Context) {
+	var (
+		req pb.OutboxMessageSentReq
+	)
+
+	err := c.ShouldBindJSON(&req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload", "details": err.Error()})
+		return
+	}
+
+	claims, err := config.GetClaims(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	userId := claims["user_id"].(string)
+
+	req.SenderId = userId
+
+	res, err := h.OS.Send(c.Request.Context(), &req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send message", "details": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, res)
+}
+
+// GetOutboxMessageByID godoc
+// @Summary Get outbox message by ID
+// @Description Retrieves an outbox message by its ID.
+// @Tags 06-Outbox
+// @Accept json
+// @Produce json
+// @Param id path string true "Outbox message ID"
+// @Success 200 {object} pb.OutboxMessageGetRes "Outbox message retrieved successfully"
+// @Failure 401 {object} string "Unauthorized"
+// @Failure 404 {object} string "Outbox message not found"
+// @Failure 500 {object} string "Server error"
+// @Security BearerAuth
+// @Router /outbox/{id} [get]
+func (h *HTTPHandler) GetOutboxMessageByID(c *gin.Context) {
+	messageId := c.Param("id")
+
+	res, err := h.OS.Get(c.Request.Context(), &pb.ByID{Id: messageId})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get outbox message", "details": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, res)
+}
+
+// GetAllOutboxMessages godoc
+// @Summary Get all outbox messages
+// @Description Retrieves all outbox messages for the authenticated user.
+// @Tags 06-Outbox
+// @Accept json
+// @Produce json
+// @Param query query string false "Search query"
+// @Param is_archived query bool false "Filter by archived status"
+// @Param is_starred query bool false "Filter by starred status"
+// @Param sent_from query string false "Filter by sent date (from)"
+// @Param sent_to query string false "Filter by sent date (to)"
+// @Param page query int false "Page number"
+// @Param limit query int false "Number of messages per page"
+// @Success 200 {object} pb.OutboxMessagesGetAllRes "Outbox messages retrieved successfully"
+// @Failure 401 {object} string "Unauthorized"
+// @Failure 500 {object} string "Server error"
+// @Security BearerAuth
+// @Router /outbox [get]
+func (h *HTTPHandler) GetAllOutboxMessages(c *gin.Context) {
+	req := &pb.OutboxMessagesGetAllReq{
+		Body: &pb.OutboxMessagesGetAllBody{
+			Query:      c.Query("query"),
+			IsArchived: c.Query("is_archived") == "true",
+			IsStarred:  c.Query("is_starred") == "true",
+			SentFrom:   c.Query("sent_from"),
+			SentTo:     c.Query("sent_to"),
+		},
+		Pagination: &pb.Pagination{
+			Skip:  0,
+			Limit: 10, // Default limit
+		},
+	}
+
+	if c.Query("page") != "" {
+		page, err := strconv.ParseInt(c.Query("page"), 10, 64)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page number"})
+			return
+		}
+		req.Pagination.Skip = (page - 1) * req.Pagination.Limit
+	}
+
+	if c.Query("limit") != "" {
+		limit, err := strconv.ParseInt(c.Query("limit"), 10, 64)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid limit"})
+			return
+		}
+		req.Pagination.Limit = limit
+	}
+
+	res, err := h.OS.GetAll(c.Request.Context(), req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get outbox messages", "details": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, res)
+}
+
+// MoveOutboxMessageToTrash godoc
+// @Summary Move outbox message to trash
+// @Description Moves an outbox message to the trash folder.
+// @Tags 06-Outbox
+// @Accept json
+// @Produce json
+// @Param id path string true "Outbox message ID"
+// @Success 204 {object} string "Outbox message moved to trash successfully"
+// @Failure 401 {object} string "Unauthorized"
+// @Failure 404 {object} string "Outbox message not found"
+// @Failure 500 {object} string "Server error"
+// @Security BearerAuth
+// @Router /outbox/{id}/trash [put]
+func (h *HTTPHandler) MoveOutboxMessageToTrash(c *gin.Context) {
+	messageId := c.Param("id")
+
+	_, err := h.OS.MoveToTrash(c.Request.Context(), &pb.ByID{Id: messageId})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to move outbox message to trash", "details": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusNoContent, gin.H{"message": "Outbox message moved to trash successfully"})
+}
+
+// DeleteOutboxMessage godoc
+// @Summary Delete outbox message
+// @Description Permanently deletes an outbox message.
+// @Tags 06-Outbox
+// @Accept json
+// @Produce json
+// @Param id path string true "Outbox message ID"
+// @Success 204 {object} string "Outbox message deleted successfully"
+// @Failure 401 {object} string "Unauthorized"
+// @Failure 404 {object} string "Outbox message not found"
+// @Failure 500 {object} string "Server error"
+// @Security BearerAuth
+// @Router /outbox/{id} [delete]
+func (h *HTTPHandler) DeleteOutboxMessage(c *gin.Context) {
+	messageId := c.Param("id")
+
+	_, err := h.OS.Delete(c.Request.Context(), &pb.ByID{Id: messageId})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete outbox message", "details": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusNoContent, gin.H{"message": "Outbox message deleted successfully"})
+}
+
+// StarOutboxMessage godoc
+// @Summary Star outbox message
+// @Description Stars or unstars an outbox message.
+// @Tags 06-Outbox
+// @Accept json
+// @Produce json
+// @Param id path string true "Outbox message ID"
+// @Success 200 {object} pb.Void "Outbox message starred/unstarred successfully"
+// @Failure 401 {object} string "Unauthorized"
+// @Failure 404 {object} string "Outbox message not found"
+// @Failure 500 {object} string "Server error"
+// @Security BearerAuth
+// @Router /outbox/{id}/star [put]
+func (h *HTTPHandler) StarOutboxMessage(c *gin.Context) {
+	messageId := c.Param("id")
+
+	_, err := h.OS.StarMessage(c.Request.Context(), &pb.ByID{Id: messageId})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to star/unstar outbox message", "details": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, &pb.Void{})
+}
+
+// ArchiveOutboxMessage godoc
+// @Summary Archive outbox message
+// @Description Archives or unarchives an outbox message.
+// @Tags 06-Outbox
+// @Accept json
+// @Produce json
+// @Param id path string true "Outbox message ID"
+// @Success 200 {object} pb.Void "Outbox message archived/unarchived successfully"
+// @Failure 401 {object} string "Unauthorized"
+// @Failure 404 {object} string "Outbox message not found"
+// @Failure 500 {object} string "Server error"
+// @Security BearerAuth
+// @Router /outbox/{id}/archive [put]
+func (h *HTTPHandler) ArchiveOutboxMessage(c *gin.Context) {
+	messageId := c.Param("id")
+
+	_, err := h.OS.ArchiveMessage(c.Request.Context(), &pb.ByID{Id: messageId})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to archive/unarchive outbox message", "details": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, &pb.Void{})
+}

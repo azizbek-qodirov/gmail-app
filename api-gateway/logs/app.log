@@ -1,0 +1,12 @@
+2024-09-07 03:23:41 ERROR run.go:18 Minio not connected due to error: Get "http://localhost:9000/pfp-bucket/?location=": dial tcp 127.0.0.1:9000: connect: connection refused
+2024-09-07 03:27:12 ERROR run.go:18 Error sending confirmation code:  gomail: could not send email 1: gomail: invalid address "": mail: no address
+2024-09-07 03:29:19 INFO run.go:18 New account registered to the system:  qodirovazizbek249@gmail.com
+2024-09-07 03:39:57 INFO run.go:18 New account registered to the system:  qodirovazizbek249@gmail.com
+2024-09-07 03:42:27 INFO run.go:18 New account registered to the system:  qodirovazizbek249@gmail.com
+2024-09-07 03:42:27 INFO run.go:18 New account registered to the system:  qodirovazizbek249@gmail.com
+2024-09-07 03:48:31 INFO run.go:18 New account registered to the system:  qodirovazizbek249@gmail.com
+2024-09-07 03:49:47 INFO run.go:18 New account registered to the system:  qodirovazizbek249@gmail.com
+2024-09-07 03:54:10 INFO run.go:18 New account registered to the system:  qodirovazizbek249@gmail.com
+2024-09-07 05:07:36 ERROR run.go:21 Minio not connected due to error: Get "http://localhost:9000/pfp-bucket/?location=": dial tcp 127.0.0.1:9000: connect: connection refused
+2024-09-07 09:36:34 ERROR run.go:21 Minio not connected due to error: Get "http://localhost:9000/pfp-bucket/?location=": dial tcp 127.0.0.1:9000: connect: connection refused
+2024-09-07 12:47:14 INFO run.go:21 New account registered to the system:  qodirovazizbek570@gmail.com
