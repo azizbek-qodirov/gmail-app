@@ -34,7 +34,6 @@ func Run(cf *config.Config) {
 
 	// repo
 	db := repo.NewStorage(pgm.DB)
-
 	// register kafka handlers
 	// k_handler := KafkaHandler{
 	// 	certificate: service.NewCertificateService(db, kf_p, minio),
@@ -50,7 +49,7 @@ func Run(cf *config.Config) {
 	}
 	server := grpc.NewServer()
 	pb.RegisterUserServiceServer(server, service.NewUserService(db))
-	pb.RegisterDraftServiceServer(server, service.NewDraftService(db))
+	pb.RegisterDraftServiceServer(server, service.NewDraftService(db, db.DB))
 	pb.RegisterInboxServiceServer(server, service.NewInboxService(db))
 	pb.RegisterOutboxServiceServer(server, service.NewOutboxService(db))
 	pb.RegisterAttachmentServiceServer(server, service.NewAttachmentService(db))

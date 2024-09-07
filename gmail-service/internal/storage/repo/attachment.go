@@ -112,10 +112,10 @@ func (r *AttachmentRepo) Delete(ctx context.Context, req *pb.ByID) (*pb.Void, er
 
 	return nil, nil
 }
+
 func (r *AttachmentRepo) GetAll(ctx context.Context, req *pb.AttachmentGetAllReq) (*pb.AttachmentGetAllRes, error) {
 	var attachments []*pb.AttachmentGetRes
 
-	// 1. Get Attachment IDs from Outbox
 	var attachmentIDs []uuid.UUID
 	query := `SELECT attachment_ids FROM outbox WHERE id = $1 AND deleted_at = 0`
 	err := r.db.QueryRowContext(ctx, query, req.OutboxId).Scan(&attachmentIDs)

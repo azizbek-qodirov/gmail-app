@@ -2,7 +2,6 @@ package config
 
 import (
 	"api-gateway/internal/http/token"
-	"database/sql"
 	"errors"
 	"regexp"
 
@@ -43,17 +42,6 @@ func IsValidUUID(id string) error {
 	return nil
 }
 
-func CheckRowsAffected(res sql.Result, object string) error {
-	rowsAffected, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rowsAffected == 0 {
-		return errors.New(object + " not found")
-	}
-	return nil
-}
-
 func GetClaims(c *gin.Context) (jwt.MapClaims, error) {
 	authHeader := c.GetHeader("Authorization")
 	if authHeader == "" {
@@ -79,4 +67,12 @@ func GetRefreshToken(c *gin.Context) (string, error) {
 	}
 
 	return authHeader, nil
+}
+
+func GetUserIDByClaims(c *gin.Context) (string, error) {
+	claims, err := GetClaims(c)
+	if err != nil {
+		return "", err
+	}
+	return claims["user_id"].(string), nil
 }

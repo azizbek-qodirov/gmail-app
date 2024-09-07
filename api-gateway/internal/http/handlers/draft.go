@@ -11,7 +11,7 @@ import (
 
 // CreateDraft godoc
 // @Summary Create a new draft
-// @Description Creates a new draft message associated with the authenticated user.
+// @Description Creates a new draft message. Use empty string in order to not to use this field.
 // @Tags 05-Draft
 // @Accept json
 // @Produce json
@@ -23,42 +23,34 @@ import (
 // @Security BearerAuth
 // @Router /draft [post]
 func (h *HTTPHandler) CreateDraft(c *gin.Context) {
-	var (
-		req pb.DraftCreateUpdateReq
-	)
+	var req pb.DraftCreateUpdateReq
 
-	err := c.ShouldBindJSON(&req.Body)
-	if err != nil {
+	if err := c.ShouldBindJSON(&req.Body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload", "details": err.Error()})
 		return
 	}
 
-	claims, err := config.GetClaims(c)
-	if err != nil {
+	if req.SenderId, err = config.GetUserIDByClaims(c); err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	userId := claims["user_id"].(string)
 
-	req.SenderId = userId
-
-	_, err = h.DS.Create(c.Request.Context(), &req)
-	if err != nil {
+	if _, err = h.DS.Create(c.Request.Context(), &req); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create draft", "details": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusCreated, &pb.Void{})
+	c.JSON(http.StatusCreated, gin.H{"message": "Draft successfully created!"})
 }
 
 // UpdateDraft godoc
 // @Summary Update an existing draft
-// @Description Updates a draft message with the provided ID.
+// @Description Updates a draft message with the provided ID. Use empty string in order to not to use this field.
 // @Tags 05-Draft
 // @Accept json
 // @Produce json
 // @Param id path string true "Draft ID"
-// @Param draft body pb.DraftCreateUpdateReq true "Draft update request"
+// @Param draft body pb.DraftCreateUpdateBody true "Draft update request"
 // @Success 200 {object} pb.Void "Draft updated successfully"
 // @Failure 400 {object} string "Invalid request payload"
 // @Failure 401 {object} string "Unauthorized"
@@ -67,27 +59,16 @@ func (h *HTTPHandler) CreateDraft(c *gin.Context) {
 // @Security BearerAuth
 // @Router /draft/{id} [put]
 func (h *HTTPHandler) UpdateDraft(c *gin.Context) {
-	var (
-		req pb.DraftCreateUpdateReq
-	)
+	var req pb.DraftCreateUpdateReq
+	draft_id := c.Param("id")
+	req.SenderId = draft_id
 
-	err := c.ShouldBindJSON(&req)
-	if err != nil {
+	if err = c.ShouldBindJSON(&req.Body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload", "details": err.Error()})
 		return
 	}
 
-	claims, err := config.GetClaims(c)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-		return
-	}
-	userId := claims["user_id"].(string)
-
-	req.SenderId = userId
-
-	_, err = h.DS.Update(c.Request.Context(), &req)
-	if err != nil {
+	if _, err = h.DS.Update(c.Request.Context(), &req); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update draft", "details": err.Error()})
 		return
 	}

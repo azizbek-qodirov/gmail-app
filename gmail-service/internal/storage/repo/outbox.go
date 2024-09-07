@@ -241,7 +241,7 @@ func (r *OutboxRepo) Send(ctx context.Context, req *pb.OutboxMessageSentReq) (*p
 	var failed int64 = 0
 	var failedEmails []string
 
-	for _, receiver := range req.Body.Receivers.To.Email {
+	for _, receiver := range req.Body.Receivers.To.Emails {
 		query = `
 			INSERT INTO inbox (outbox_id, receiver_id, type)
 			SELECT $1, id, 'to'

@@ -15,7 +15,6 @@ import (
 // @Tags 07-Attachments
 // @Accept multipart/form-data
 // @Produce json
-// @Param outbox_id formData string true "Outbox message ID"
 // @Param file formData file true "Attachment file"
 // @Success 201 {object} pb.AttachmentCreateRes "Attachment created successfully"
 // @Failure 400 {object} string "Invalid request payload"
@@ -24,7 +23,6 @@ import (
 // @Security BearerAuth
 // @Router /attachment [post]
 func (h *HTTPHandler) CreateAttachment(c *gin.Context) {
-	outboxId := c.PostForm("outbox_id")
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid file upload", "details": err.Error()})
@@ -44,7 +42,6 @@ func (h *HTTPHandler) CreateAttachment(c *gin.Context) {
 	fileUrl := "http://your-storage-service/path/to/file" // Replace with actual URL
 
 	req := &pb.AttachmentCreateReq{
-		OutboxId: outboxId,
 		FileUrl:  fileUrl,
 		FileName: header.Filename,
 		FileSize: strconv.FormatInt(header.Size, 10),
@@ -83,32 +80,7 @@ func (h *HTTPHandler) GetAttachmentsByOutboxID(c *gin.Context) {
 	outboxId := c.Param("outbox_id")
 
 	req := &pb.AttachmentGetAllReq{
-		OutboxId:    outboxId,
-		MimeType:    c.Query("mime_type"),
-		CreatedFrom: c.Query("created_from"),
-		CreatedTo:   c.Query("created_to"),
-		Pagination: &pb.Pagination{
-			Skip:  0,
-			Limit: 10,
-		},
-	}
-
-	if c.Query("page") != "" {
-		page, err := strconv.ParseInt(c.Query("page"), 10, 64)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page number"})
-			return
-		}
-		req.Pagination.Skip = (page - 1) * req.Pagination.Limit
-	}
-
-	if c.Query("limit") != "" {
-		limit, err := strconv.ParseInt(c.Query("limit"), 10, 64)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid limit"})
-			return
-		}
-		req.Pagination.Limit = limit
+		OutboxId: outboxId,
 	}
 
 	res, err := h.AS.GetAll(c.Request.Context(), req)

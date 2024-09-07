@@ -36,6 +36,10 @@ CREATE TABLE IF NOT EXISTS outbox
     body TEXT,
     attachment_ids UUID[],
     sender_id UUID REFERENCES users(id),
+    receiver_to_emails VARCHAR(320)[],
+    receiver_cc_emails VARCHAR(320)[],
+    receiver_bcc_emails VARCHAR(320)[],
+    
     is_draft BOOLEAN DEFAULT FALSE,
     is_archived BOOLEAN DEFAULT FALSE,
     is_starred BOOLEAN DEFAULT FALSE,

@@ -25,8 +25,6 @@ definitions:
         type: string
       mime_type:
         type: string
-      outbox:
-        $ref: '#/definitions/genproto.OutboxMessageGetRes'
     type: object
   genproto.ByEmail:
     properties:
@@ -51,13 +49,6 @@ definitions:
       receivers:
         $ref: '#/definitions/genproto.Receivers'
       subject:
-        type: string
-    type: object
-  genproto.DraftCreateUpdateReq:
-    properties:
-      body:
-        $ref: '#/definitions/genproto.DraftCreateUpdateBody'
-      sender_id:
         type: string
     type: object
   genproto.InboxMessageGetRes:
@@ -99,21 +90,21 @@ definitions:
     type: object
   genproto.MessageSendBCC:
     properties:
-      email:
+      emails:
         items:
           type: string
         type: array
     type: object
   genproto.MessageSendCC:
     properties:
-      email:
+      emails:
         items:
           type: string
         type: array
     type: object
   genproto.MessageSendTo:
     properties:
-      email:
+      emails:
         items:
           type: string
         type: array
@@ -276,11 +267,6 @@ paths:
       - multipart/form-data
       description: Creates a new attachment associated with an outbox message.
       parameters:
-      - description: Outbox message ID
-        in: formData
-        name: outbox_id
-        required: true
-        type: string
       - description: Attachment file
         in: formData
         name: file
@@ -467,7 +453,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Creates a new draft message associated with the authenticated user.
+      description: Creates a new draft message. Use empty string in order to not to
+        use this field.
       parameters:
       - description: Draft creation request
         in: body
@@ -537,7 +524,8 @@ paths:
     put:
       consumes:
       - application/json
-      description: Updates a draft message with the provided ID.
+      description: Updates a draft message with the provided ID. Use empty string
+        in order to not to use this field.
       parameters:
       - description: Draft ID
         in: path
@@ -549,7 +537,7 @@ paths:
         name: draft
         required: true
         schema:
-          $ref: '#/definitions/genproto.DraftCreateUpdateReq'
+          $ref: '#/definitions/genproto.DraftCreateUpdateBody'
       produces:
       - application/json
       responses:

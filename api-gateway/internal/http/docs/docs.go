@@ -35,13 +35,6 @@ const docTemplate = `{
                 "summary": "Create a new attachment",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Outbox message ID",
-                        "name": "outbox_id",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
                         "type": "file",
                         "description": "Attachment file",
                         "name": "file",
@@ -322,7 +315,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Creates a new draft message associated with the authenticated user.",
+                "description": "Creates a new draft message. Use empty string in order to not to use this field.",
                 "consumes": [
                     "application/json"
                 ],
@@ -379,7 +372,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Updates a draft message with the provided ID.",
+                "description": "Updates a draft message with the provided ID. Use empty string in order to not to use this field.",
                 "consumes": [
                     "application/json"
                 ],
@@ -404,7 +397,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/genproto.DraftCreateUpdateReq"
+                            "$ref": "#/definitions/genproto.DraftCreateUpdateBody"
                         }
                     }
                 ],
@@ -1995,9 +1988,6 @@ const docTemplate = `{
                 },
                 "mime_type": {
                     "type": "string"
-                },
-                "outbox": {
-                    "$ref": "#/definitions/genproto.OutboxMessageGetRes"
                 }
             }
         },
@@ -2036,17 +2026,6 @@ const docTemplate = `{
                     "$ref": "#/definitions/genproto.Receivers"
                 },
                 "subject": {
-                    "type": "string"
-                }
-            }
-        },
-        "genproto.DraftCreateUpdateReq": {
-            "type": "object",
-            "properties": {
-                "body": {
-                    "$ref": "#/definitions/genproto.DraftCreateUpdateBody"
-                },
-                "sender_id": {
                     "type": "string"
                 }
             }
@@ -2111,7 +2090,7 @@ const docTemplate = `{
         "genproto.MessageSendBCC": {
             "type": "object",
             "properties": {
-                "email": {
+                "emails": {
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -2122,7 +2101,7 @@ const docTemplate = `{
         "genproto.MessageSendCC": {
             "type": "object",
             "properties": {
-                "email": {
+                "emails": {
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -2133,7 +2112,7 @@ const docTemplate = `{
         "genproto.MessageSendTo": {
             "type": "object",
             "properties": {
-                "email": {
+                "emails": {
                     "type": "array",
                     "items": {
                         "type": "string"

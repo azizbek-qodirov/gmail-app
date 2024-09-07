@@ -159,25 +159,25 @@ func (r *UserRepo) UpdateUser(ctx context.Context, req *pb.UserUpdateReq) (*pb.V
 	var params []interface{}
 	paramCounter := 1
 
-	if req.Body.FirstName != "" && req.Body.FirstName != "string" {
+	if req.Body.FirstName != "" {
 		query += fmt.Sprintf(" first_name = $%d,", paramCounter)
 		params = append(params, req.Body.FirstName)
 		paramCounter++
 	}
 
-	if req.Body.LastName != "" && req.Body.LastName != "string" {
+	if req.Body.LastName != "" {
 		query += fmt.Sprintf(" last_name = $%d,", paramCounter)
 		params = append(params, req.Body.LastName)
 		paramCounter++
 	}
 
-	if req.Body.Dob != "" && req.Body.Dob != "string" {
+	if req.Body.Dob != "" {
 		query += fmt.Sprintf(" dob = $%d,", paramCounter)
 		params = append(params, req.Body.Dob)
 		paramCounter++
 	}
 
-	if req.Body.Gender != "" && req.Body.Gender != "string" {
+	if req.Body.Gender != "" {
 		query += fmt.Sprintf(" gender = $%d,", paramCounter)
 		params = append(params, req.Body.Gender)
 		paramCounter++

@@ -12,6 +12,7 @@ type Storage struct {
 	OutboxS     storage.OutboxI
 	InboxS      storage.InboxI
 	AttachmentS storage.AttachmentI
+	DB          *sql.DB
 }
 
 func NewStorage(db *sql.DB) *Storage {
@@ -21,6 +22,7 @@ func NewStorage(db *sql.DB) *Storage {
 		DraftS:      NewDraftRepo(db),
 		OutboxS:     NewOutboxRepo(db),
 		InboxS:      NewInboxRepo(db),
+		DB:          db,
 	}
 }
 

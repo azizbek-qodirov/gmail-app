@@ -24,13 +24,6 @@
                 "summary": "Create a new attachment",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Outbox message ID",
-                        "name": "outbox_id",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
                         "type": "file",
                         "description": "Attachment file",
                         "name": "file",
@@ -311,7 +304,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Creates a new draft message associated with the authenticated user.",
+                "description": "Creates a new draft message. Use empty string in order to not to use this field.",
                 "consumes": [
                     "application/json"
                 ],
@@ -368,7 +361,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Updates a draft message with the provided ID.",
+                "description": "Updates a draft message with the provided ID. Use empty string in order to not to use this field.",
                 "consumes": [
                     "application/json"
                 ],
@@ -393,7 +386,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/genproto.DraftCreateUpdateReq"
+                            "$ref": "#/definitions/genproto.DraftCreateUpdateBody"
                         }
                     }
                 ],
@@ -1984,9 +1977,6 @@
                 },
                 "mime_type": {
                     "type": "string"
-                },
-                "outbox": {
-                    "$ref": "#/definitions/genproto.OutboxMessageGetRes"
                 }
             }
         },
@@ -2025,17 +2015,6 @@
                     "$ref": "#/definitions/genproto.Receivers"
                 },
                 "subject": {
-                    "type": "string"
-                }
-            }
-        },
-        "genproto.DraftCreateUpdateReq": {
-            "type": "object",
-            "properties": {
-                "body": {
-                    "$ref": "#/definitions/genproto.DraftCreateUpdateBody"
-                },
-                "sender_id": {
                     "type": "string"
                 }
             }
@@ -2100,7 +2079,7 @@
         "genproto.MessageSendBCC": {
             "type": "object",
             "properties": {
-                "email": {
+                "emails": {
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -2111,7 +2090,7 @@
         "genproto.MessageSendCC": {
             "type": "object",
             "properties": {
-                "email": {
+                "emails": {
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -2122,7 +2101,7 @@
         "genproto.MessageSendTo": {
             "type": "object",
             "properties": {
-                "email": {
+                "emails": {
                     "type": "array",
                     "items": {
                         "type": "string"

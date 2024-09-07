@@ -11,6 +11,10 @@ import (
 	"google.golang.org/grpc"
 )
 
+var (
+	err error
+)
+
 type HTTPHandler struct {
 	Logger *l.Logger
 	RDB    *rdb.RedisClient

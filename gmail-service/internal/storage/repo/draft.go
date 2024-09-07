@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
 type DraftRepo struct {
@@ -20,34 +21,76 @@ func NewDraftRepo(db *sql.DB) *DraftRepo {
 }
 
 func (r *DraftRepo) Create(ctx context.Context, req *pb.DraftCreateUpdateReq) (*pb.Void, error) {
-	tx, err := r.db.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Rollback()
-
 	query := `
-		INSERT INTO outbox (subject, body, attachment_ids, sender_id, is_draft)
+		INSERT INTO outbox 
+			(
+				subject, 
+				body, 
+				attachment_ids, 
+				sender_id, 
+				receiver_to_emails, 
+				receiver_cc_emails, 
+				receiver_bcc_emails, 
+				is_draft
+			)
 		VALUES ($1, $2, $3, $4, true)
 	`
-	err = tx.QueryRowContext(ctx, query, req.Body.Subject, req.Body.Body, req.SenderId).Err()
+	res, err := r.db.ExecContext(
+		ctx,
+		query,
+		req.Body.Subject,
+		req.Body.Body,
+		pq.Array(req.Body.AttachmentIds),
+		req.SenderId,
+		pq.Array(req.Body.Receivers.To.Emails),
+		pq.Array(req.Body.Receivers.Cc.Emails),
+		pq.Array(req.Body.Receivers.Bcc.Emails),
+	)
 	if err != nil {
-		err = tx.Rollback()
-		if err != nil {
-			return nil, err
-		}
 		return nil, err
 	}
 
-	for _, v := range req.Body.AttachmentIds {
-		exists, err := r.attachmentRepo.IsExists(ctx, &pb.ByID{Id: v})
-		if err != nil {
-			return nil, err
-		}
-		if !exists {
-			return nil, errors.New("attachment with id " + v + " not found")
-		}
-		
+	if aff, err := res.RowsAffected(); aff == 0 || err != nil {
+		return nil, errors.New(err.Error())
+	}
+
+	return nil, nil
+}
+
+func (r *DraftRepo) Update(ctx context.Context, req *pb.DraftCreateUpdateReq) (*pb.Void, error) {
+	query := `
+		UPDATE outbox
+		SET subject = $1,
+			body = $2,
+			attachment_ids = $3
+			receiver_to_emails = $4,
+			receiver_cc_emails = $5,
+			receiver_bcc_emails = $6
+		WHERE id = $7 AND is_draft = true
+	`
+	res, err := r.db.ExecContext(
+		ctx,
+		query,
+		req.Body.Subject,
+		req.Body.Body,
+		pq.Array(req.Body.AttachmentIds),
+		pq.Array(req.Body.Receivers.To.Emails),
+		pq.Array(req.Body.Receivers.Cc.Emails),
+		pq.Array(req.Body.Receivers.Bcc.Emails),
+		req.SenderId, // this actually is draft id
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return nil, err
+	}
+
+	if rows == 0 {
+		return nil, errors.New("draft not found")
 	}
 
 	return &pb.Void{}, nil
@@ -117,7 +160,7 @@ func (r *DraftRepo) SendDraft(ctx context.Context, req *pb.ByID) (*pb.MessageSen
 	var failed int64 = 0
 	var failedEmails []string
 
-	for _, receiver := range draft.Receivers.To.Email {
+	for _, receiver := range draft.Receivers.To.Emails {
 		query = `
 			INSERT INTO inbox (outbox_id, receiver_id, type)
 			SELECT $1, id, 'to'
@@ -139,7 +182,7 @@ func (r *DraftRepo) SendDraft(ctx context.Context, req *pb.ByID) (*pb.MessageSen
 		}
 	}
 
-	for _, cc := range draft.Receivers.Cc.Email {
+	for _, cc := range draft.Receivers.Cc.Emails {
 		query = `
 			INSERT INTO inbox (outbox_id, receiver_id, type)
 			SELECT $1, id, 'cc'
@@ -161,7 +204,7 @@ func (r *DraftRepo) SendDraft(ctx context.Context, req *pb.ByID) (*pb.MessageSen
 		}
 	}
 
-	for _, bcc := range draft.Receivers.Bcc.Email {
+	for _, bcc := range draft.Receivers.Bcc.Emails {
 		query = `
 			INSERT INTO inbox (outbox_id, receiver_id, type)
 			SELECT $1, id, 'bcc'
@@ -192,37 +235,4 @@ func (r *DraftRepo) SendDraft(ctx context.Context, req *pb.ByID) (*pb.MessageSen
 		TotalFailed:  failed,
 		FailedEmails: failedEmails,
 	}, nil
-}
-
-func (r *DraftRepo) Update(ctx context.Context, req *pb.DraftCreateUpdateReq) (*pb.Void, error) {
-	query := `
-		UPDATE outbox
-		SET subject = $1,
-			body = $2,
-			attachment_ids = $3
-		WHERE id = $4 AND is_draft = true
-	`
-	res, err := r.db.ExecContext(
-		ctx,
-		query,
-		req.Body.Subject,
-		req.Body.Body,
-		req.Body.AttachmentIds,
-		req.SenderId,
-	)
-
-	if err != nil {
-		return nil, err
-	}
-
-	rows, err := res.RowsAffected()
-	if err != nil {
-		return nil, err
-	}
-
-	if rows == 0 {
-		return nil, errors.New("draft not found")
-	}
-
-	return &pb.Void{}, nil
 }
