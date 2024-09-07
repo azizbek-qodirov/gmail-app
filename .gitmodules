@@ -1,0 +1,6 @@
+[submodule "gmail-service/gmailapp-submodule"]
+	path = gmail-service/gmailapp-submodule
+	url = git@github.com:azizbek-qodirov/gmailapp-submodule.git
+[submodule "api-gateway/gmailapp-submodule"]
+	path = api-gateway/gmailapp-submodule
+	url = git@github.com:azizbek-qodirov/gmailapp-submodule.git
