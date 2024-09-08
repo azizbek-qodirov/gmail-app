@@ -38,7 +38,9 @@ func (h *HTTPHandler) Register(c *gin.Context) {
 	}
 	isEmailExists, err := h.US.IsEmailExists(c, &pb.ByEmail{Email: req.Email})
 	if err != nil {
+		h.Logger.ERROR.Printf("Error checking email existence: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Couldn't check email existance", "details": err.Error()})
+		return
 	}
 	if isEmailExists.Exists {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Email already registered"})
@@ -52,19 +54,23 @@ func (h *HTTPHandler) Register(c *gin.Context) {
 
 	hashedPassword, err := config.HashPassword(req.Password)
 	if err != nil {
+		h.Logger.ERROR.Printf("Error hashing password: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Server error", "err": err.Error()})
+		return
 	}
 
 	req.Password = hashedPassword
 
 	err = config.SendConfirmationCode(req.Email, h.RDB, h.Logger)
 	if err != nil {
+		h.Logger.ERROR.Printf("Error sending confirmation code: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Server error sending confirmation code", "err": err.Error()})
 		return
 	}
 
 	_, err = h.US.CreateUser(c, &req)
 	if err != nil {
+		h.Logger.ERROR.Printf("Error creating user: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Server error", "err": err.Error()})
 		return
 	}
@@ -98,6 +104,7 @@ func (h *HTTPHandler) ConfirmRegistration(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Verification code expired or email not found"})
 		return
 	} else if err != nil {
+		h.Logger.ERROR.Printf("Error getting confirmation code from Redis: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "This email not found in confirmation requests!"})
 		return
 	}
@@ -109,12 +116,14 @@ func (h *HTTPHandler) ConfirmRegistration(c *gin.Context) {
 
 	_, err = h.US.ConfirmUser(c, &pb.ByEmail{Email: req.Email})
 	if err != nil {
+		h.Logger.ERROR.Printf("Error confirming user: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error confirming user", "details": err.Error()})
 		return
 	}
 
 	user, err := h.US.GetUserSecurityByEmail(c, &pb.ByEmail{Email: req.Email})
 	if err != nil {
+		h.Logger.ERROR.Printf("Error fetching user: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching user", "details": err.Error()})
 		return
 	}
@@ -146,6 +155,7 @@ func (h *HTTPHandler) Login(c *gin.Context) {
 
 	user, err := h.US.GetUserSecurityByEmail(c, &pb.ByEmail{Email: req.Email})
 	if err != nil {
+		h.Logger.ERROR.Printf("Error fetching user: %v", err)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User registered with this email not found"})
 		return
 	}
@@ -158,6 +168,7 @@ func (h *HTTPHandler) Login(c *gin.Context) {
 	if !user.IsConfirmed {
 		err = config.SendConfirmationCode(req.Email, h.RDB, h.Logger)
 		if err != nil {
+			h.Logger.ERROR.Printf("Error sending confirmation code: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Server error sending confirmation code", "err": err.Error()})
 			return
 		}
@@ -191,6 +202,7 @@ func (h *HTTPHandler) Logout(c *gin.Context) {
 
 	err = h.RDB.Set(context.Background(), refreshToken, "", time.Hour*24*7).Err()
 	if err != nil {
+		h.Logger.ERROR.Printf("Error blacklisting refresh token: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to log out", "details": err.Error()})
 		return
 	}

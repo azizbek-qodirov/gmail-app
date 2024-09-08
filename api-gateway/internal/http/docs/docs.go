@@ -1371,6 +1371,12 @@ const docTemplate = `{
                             "type": "string"
                         }
                     },
+                    "429": {
+                        "description": "Too many requests, please try again later",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
                     "500": {
                         "description": "Server error",
                         "schema": {

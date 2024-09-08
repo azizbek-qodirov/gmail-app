@@ -3,6 +3,8 @@ package handlers
 import (
 	"api-gateway/internal/pkg/config"
 	pb "api-gateway/internal/pkg/genproto"
+	"fmt"
+	"time"
 
 	"net/http"
 	"strconv"
@@ -20,12 +22,12 @@ import (
 // @Success 201 {object} pb.MessageSentRes "Message sent successfully"
 // @Failure 400 {object} string "Invalid request payload"
 // @Failure 401 {object} string "Unauthorized"
+// @Failure 429 {object} string "Too many requests, please try again later"
 // @Failure 500 {object} string "Server error"
 // @Security BearerAuth
 // @Router /outbox [post]
 func (h *HTTPHandler) SendMessage(c *gin.Context) {
 	req := pb.OutboxMessageSentReq{}
-
 	if err := c.ShouldBindJSON(&req.Body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload", "details": err.Error()})
 		return
@@ -33,6 +35,24 @@ func (h *HTTPHandler) SendMessage(c *gin.Context) {
 
 	if req.SenderId, err = config.GetUserIDByClaims(c); err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
+	rateLimitKey := fmt.Sprintf("ratelimit:%s", req.SenderId)
+	exists, err := h.RDB.DB.Exists(c.Request.Context(), rateLimitKey).Result()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check rate limit", "details": err.Error()})
+		return
+	}
+
+	if exists == 1 {
+		c.JSON(http.StatusTooManyRequests, gin.H{"error": "Too many requests, please wait 10 seconds before sending another message"})
+		return
+	}
+
+	err = h.RDB.DB.Set(c.Request.Context(), rateLimitKey, "active", 30*time.Second).Err()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to set rate limit", "details": err.Error()})
 		return
 	}
 
