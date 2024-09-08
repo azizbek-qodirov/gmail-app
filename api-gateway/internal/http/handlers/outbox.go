@@ -41,6 +41,7 @@ func (h *HTTPHandler) SendMessage(c *gin.Context) {
 	rateLimitKey := fmt.Sprintf("ratelimit:%s", req.SenderId)
 	exists, err := h.RDB.DB.Exists(c.Request.Context(), rateLimitKey).Result()
 	if err != nil {
+		h.Logger.ERROR.Printf("Error checking rate limit: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check rate limit", "details": err.Error()})
 		return
 	}
@@ -52,12 +53,14 @@ func (h *HTTPHandler) SendMessage(c *gin.Context) {
 
 	err = h.RDB.DB.Set(c.Request.Context(), rateLimitKey, "active", 30*time.Second).Err()
 	if err != nil {
+		h.Logger.ERROR.Printf("Error setting rate limit: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to set rate limit", "details": err.Error()})
 		return
 	}
 
 	res, err := h.OS.Send(c.Request.Context(), &req)
 	if err != nil {
+		h.Logger.ERROR.Printf("Error sending message: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send message", "details": err.Error()})
 		return
 	}
@@ -83,6 +86,7 @@ func (h *HTTPHandler) GetOutboxMessageByID(c *gin.Context) {
 
 	res, err := h.OS.Get(c.Request.Context(), &pb.ByID{Id: messageId})
 	if err != nil {
+		h.Logger.ERROR.Printf("Error getting outbox message by ID: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get outbox message", "details": err.Error()})
 		return
 	}
@@ -153,6 +157,7 @@ func (h *HTTPHandler) GetAllOutboxMessages(c *gin.Context) {
 
 	res, err := h.OS.GetAll(c.Request.Context(), req)
 	if err != nil {
+		h.Logger.ERROR.Printf("Error getting all outbox messages: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get outbox messages", "details": err.Error()})
 		return
 	}
@@ -178,6 +183,7 @@ func (h *HTTPHandler) MoveOutboxMessageToTrash(c *gin.Context) {
 
 	_, err := h.OS.MoveToTrash(c.Request.Context(), &pb.ByID{Id: messageId})
 	if err != nil {
+		h.Logger.ERROR.Printf("Error moving outbox message to trash: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to move outbox message to trash", "details": err.Error()})
 		return
 	}
@@ -203,6 +209,7 @@ func (h *HTTPHandler) DeleteOutboxMessage(c *gin.Context) {
 
 	_, err := h.OS.Delete(c.Request.Context(), &pb.ByID{Id: messageId})
 	if err != nil {
+		h.Logger.ERROR.Printf("Error deleting outbox message: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete outbox message", "details": err.Error()})
 		return
 	}
@@ -228,6 +235,7 @@ func (h *HTTPHandler) StarOutboxMessage(c *gin.Context) {
 
 	_, err := h.OS.StarMessage(c.Request.Context(), &pb.ByID{Id: messageId})
 	if err != nil {
+		h.Logger.ERROR.Printf("Error starring/unstarring outbox message: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to star/unstar outbox message", "details": err.Error()})
 		return
 	}
@@ -253,6 +261,7 @@ func (h *HTTPHandler) ArchiveOutboxMessage(c *gin.Context) {
 
 	_, err := h.OS.ArchiveMessage(c.Request.Context(), &pb.ByID{Id: messageId})
 	if err != nil {
+		h.Logger.ERROR.Printf("Error archiving/unarchiving outbox message: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to archive/unarchive outbox message", "details": err.Error()})
 		return
 	}

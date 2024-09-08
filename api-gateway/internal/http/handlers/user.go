@@ -39,6 +39,7 @@ func (h *HTTPHandler) Profile(c *gin.Context) {
 
 	user, err := h.US.GetUserByEmail(c, &pb.ByEmail{Email: email})
 	if err != nil {
+		h.Logger.ERROR.Printf("Error getting user by email: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"Server error": err.Error()})
 		return
 	}
@@ -80,6 +81,7 @@ func (h *HTTPHandler) UpdateProfile(c *gin.Context) {
 	req.Id = id
 	_, err = h.US.UpdateUser(c, &req)
 	if err != nil {
+		h.Logger.ERROR.Printf("Error updating user: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Couldn't update user", "details": err.Error()})
 		return
 	}
@@ -102,6 +104,7 @@ func (h *HTTPHandler) UpdateProfile(c *gin.Context) {
 func (h *HTTPHandler) SetPFP(c *gin.Context) {
 	wd, err := os.Getwd()
 	if err != nil {
+		h.Logger.ERROR.Printf("Error getting working directory: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Couldn't get working directory", "details": err.Error()})
 		return
 	}
@@ -114,6 +117,7 @@ func (h *HTTPHandler) SetPFP(c *gin.Context) {
 	}
 
 	if err = os.MkdirAll(tempFolderPath, 0755); err != nil {
+		h.Logger.ERROR.Printf("Error creating directory: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Couldn't create directory", "details": err.Error()})
 		return
 	}
@@ -121,6 +125,7 @@ func (h *HTTPHandler) SetPFP(c *gin.Context) {
 	filepath := fmt.Sprintf("%s%s", tempFolderPath, file.Filename)
 	err = c.SaveUploadedFile(file, filepath)
 	if err != nil {
+		h.Logger.ERROR.Printf("Error saving file: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Couldn't save file", "details": err.Error()})
 		return
 	}
@@ -143,6 +148,7 @@ func (h *HTTPHandler) SetPFP(c *gin.Context) {
 		},
 	)
 	if err != nil {
+		h.Logger.ERROR.Printf("Error putting object to Minio: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Couldn't put object to minio", "details": err.Error()})
 		return
 	}
@@ -150,6 +156,7 @@ func (h *HTTPHandler) SetPFP(c *gin.Context) {
 
 	_, err = h.US.ChangeUserPFP(c, &pb.UserChangePFPReq{Email: email, PhotoUrl: imgurl})
 	if err != nil {
+		h.Logger.ERROR.Printf("Error updating profile picture in database: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Couldn't update pfp in database", "details": err.Error()})
 		return
 	}
@@ -194,12 +201,14 @@ func (h *HTTPHandler) UpdatePassword(c *gin.Context) {
 
 	hashedPassword, err := config.HashPassword(req.NewPassword)
 	if err != nil {
+		h.Logger.ERROR.Printf("Error hashing password: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Couldn't hash your password", "details": err.Error()})
 		return
 	}
 
 	_, err = h.US.ChangeUserPassword(c, &pb.UserRecoverPasswordReq{Email: req.Email, NewPassword: hashedPassword})
 	if err != nil {
+		h.Logger.ERROR.Printf("Error updating password: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error updating password", "details": err.Error()})
 		return
 	}
@@ -211,6 +220,7 @@ func (h *HTTPHandler) GetByID(c *gin.Context) {
 	id := &pb.ByID{Id: c.Param("id")}
 	user, err := h.US.GetUserByID(c, id)
 	if err != nil {
+		h.Logger.ERROR.Printf("Error getting user by ID: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"Couldn't get the user": err.Error()})
 		return
 	}
@@ -245,12 +255,14 @@ func (h *HTTPHandler) DeleteAccount(c *gin.Context) {
 
 	_, err = h.US.DeleteUser(c, &pb.ByID{Id: userId})
 	if err != nil {
+		h.Logger.ERROR.Printf("Error deleting user account: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete account", "details": err.Error()})
 		return
 	}
 
 	err = h.RDB.Set(context.Background(), refreshToken, "", time.Hour*24*7).Err()
 	if err != nil {
+		h.Logger.ERROR.Printf("Error blacklisting refresh token: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to log out", "details": err.Error()})
 		return
 	}

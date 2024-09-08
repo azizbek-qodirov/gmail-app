@@ -55,6 +55,7 @@ func (h *HTTPHandler) CreateAttachment(c *gin.Context) {
 		minio.PutObjectOptions{ContentType: header.Header.Get("Content-Type")},
 	)
 	if err != nil {
+		h.Logger.ERROR.Printf("Error uploading file to Minio: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload file to Minio", "details": err.Error()})
 		return
 	}
@@ -71,6 +72,7 @@ func (h *HTTPHandler) CreateAttachment(c *gin.Context) {
 
 	res, err := h.AS.Create(c.Request.Context(), req)
 	if err != nil {
+		h.Logger.ERROR.Printf("Error creating attachment: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create attachment", "details": err.Error()})
 		return
 	}
@@ -106,6 +108,7 @@ func (h *HTTPHandler) GetAttachmentsByOutboxID(c *gin.Context) {
 
 	res, err := h.AS.GetAll(c.Request.Context(), req)
 	if err != nil {
+		h.Logger.ERROR.Printf("Error getting attachments: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get attachments", "details": err.Error()})
 		return
 	}
@@ -131,11 +134,14 @@ func (h *HTTPHandler) DeleteAttachment(c *gin.Context) {
 
 	res, err := h.AS.Delete(c.Request.Context(), &pb.ByID{Id: attachmentId})
 	if err != nil {
+		h.Logger.ERROR.Printf("Error deleting attachment: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete attachment", "details": err.Error()})
 		return
 	}
 	if err = h.Minio.Client.RemoveObject(c.Request.Context(), h.Minio.DefaultBucket(), res.FileName, minio.RemoveObjectOptions{}); err != nil {
+		h.Logger.ERROR.Printf("Error deleting attachment from Minio: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete attachment from Minio", "details": err.Error()})
+		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Attachment deleted successfully"})
 }
@@ -161,6 +167,7 @@ func (h *HTTPHandler) GetMyUploads(c *gin.Context) {
 
 	res, err := h.AS.GetMyUploads(c.Request.Context(), &pb.ByID{Id: user_id})
 	if err != nil {
+		h.Logger.ERROR.Printf("Error getting my uploads: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get attachments", "details": err.Error()})
 		return
 	}

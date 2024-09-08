@@ -37,6 +37,7 @@ func (h *HTTPHandler) ForgotPassword(c *gin.Context) {
 
 	user, err := h.US.GetUserByEmail(c, &pb.ByEmail{Email: req.Email})
 	if err != nil {
+		h.Logger.ERROR.Printf("Error getting user by email: %v", err)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized", "details": err.Error()})
 		return
 	}
@@ -47,6 +48,7 @@ func (h *HTTPHandler) ForgotPassword(c *gin.Context) {
 	}
 	err = config.SendConfirmationCode(*user.Email, h.RDB, h.Logger)
 	if err != nil {
+		h.Logger.ERROR.Printf("Error sending confirmation code: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Server error sending confirmation code to email", "err": err.Error()})
 		return
 	}
@@ -89,6 +91,7 @@ func (h *HTTPHandler) RecoverPassword(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Verification code expired or email not found"})
 		return
 	} else if err != nil {
+		h.Logger.ERROR.Printf("Error getting confirmation code from Redis: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "This email not found in a recovery requests!"})
 		return
 	}
@@ -100,11 +103,13 @@ func (h *HTTPHandler) RecoverPassword(c *gin.Context) {
 
 	hashedPassword, err := config.HashPassword(req.NewPassword)
 	if err != nil {
+		h.Logger.ERROR.Printf("Error hashing password: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Couldn't hash your password", "details": err.Error()})
 		return
 	}
 	_, err = h.US.ChangeUserPassword(c, &pb.UserRecoverPasswordReq{Email: req.Email, NewPassword: hashedPassword})
 	if err != nil {
+		h.Logger.ERROR.Printf("Error updating password: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error updating password", "details": err.Error()})
 		return
 	}
@@ -139,6 +144,7 @@ func (h *HTTPHandler) SendCodeAgain(c *gin.Context) {
 
 	user, err := h.US.GetUserByEmail(c, &pb.ByEmail{Email: req.Email})
 	if err != nil {
+		h.Logger.ERROR.Printf("Error getting user by email: %v", err)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized", "details": err.Error()})
 		return
 	}
@@ -149,6 +155,7 @@ func (h *HTTPHandler) SendCodeAgain(c *gin.Context) {
 	}
 	err = config.SendConfirmationCode(*user.Email, h.RDB, h.Logger)
 	if err != nil {
+		h.Logger.ERROR.Printf("Error sending confirmation code: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Server error sending confirmation code to email", "err": err.Error()})
 		return
 	}

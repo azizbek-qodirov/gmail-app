@@ -1,10 +1,11 @@
 package handlers
 
 import (
+	"net/http"
+
 	"api-gateway/internal/pkg/config"
 	pb "api-gateway/internal/pkg/genproto"
 
-	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -28,6 +29,7 @@ func (h *HTTPHandler) GetInboxMessageByID(c *gin.Context) {
 
 	res, err := h.IS.GetByID(c.Request.Context(), &pb.ByID{Id: messageId})
 	if err != nil {
+		h.Logger.ERROR.Printf("Error getting inbox message by ID: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get inbox message", "details": err.Error()})
 		return
 	}
@@ -105,6 +107,7 @@ func (h *HTTPHandler) GetAllInboxMessages(c *gin.Context) {
 
 	res, err := h.IS.GetAll(c.Request.Context(), req)
 	if err != nil {
+		h.Logger.ERROR.Printf("Error getting all inbox messages: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get inbox messages", "details": err.Error()})
 		return
 	}
@@ -130,11 +133,12 @@ func (h *HTTPHandler) MoveInboxMessageToTrash(c *gin.Context) {
 
 	_, err := h.IS.MoveToTrash(c.Request.Context(), &pb.ByID{Id: messageId})
 	if err != nil {
+		h.Logger.ERROR.Printf("Error moving inbox message to trash: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to move inbox message to trash", "details": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusNoContent, gin.H{"message": "Inbox message moved to trash successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "Inbox message moved to trash successfully"})
 }
 
 // DeleteInboxMessage godoc
@@ -155,11 +159,12 @@ func (h *HTTPHandler) DeleteInboxMessage(c *gin.Context) {
 
 	_, err := h.IS.Delete(c.Request.Context(), &pb.ByID{Id: messageId})
 	if err != nil {
+		h.Logger.ERROR.Printf("Error deleting inbox message: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete inbox message", "details": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusNoContent, gin.H{"message": "Inbox message deleted successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "Inbox message deleted successfully"})
 }
 
 // MarkInboxMessageAsRead godoc
@@ -180,6 +185,7 @@ func (h *HTTPHandler) MarkInboxMessageAsRead(c *gin.Context) {
 
 	_, err := h.IS.MarkAsRead(c.Request.Context(), &pb.ByID{Id: messageId})
 	if err != nil {
+		h.Logger.ERROR.Printf("Error marking inbox message as read: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to mark inbox message as read", "details": err.Error()})
 		return
 	}
@@ -205,6 +211,7 @@ func (h *HTTPHandler) MarkInboxMessageAsSpam(c *gin.Context) {
 
 	_, err := h.IS.MarkAsSpam(c.Request.Context(), &pb.ByID{Id: messageId})
 	if err != nil {
+		h.Logger.ERROR.Printf("Error marking inbox message as spam: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to mark inbox message as spam", "details": err.Error()})
 		return
 	}
@@ -230,6 +237,7 @@ func (h *HTTPHandler) StarInboxMessage(c *gin.Context) {
 
 	_, err := h.IS.StarMessage(c.Request.Context(), &pb.ByID{Id: messageId})
 	if err != nil {
+		h.Logger.ERROR.Printf("Error starring/unstarring inbox message: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to star/unstar inbox message", "details": err.Error()})
 		return
 	}
@@ -255,6 +263,7 @@ func (h *HTTPHandler) ArchiveInboxMessage(c *gin.Context) {
 
 	_, err := h.IS.ArchiveMessage(c.Request.Context(), &pb.ByID{Id: messageId})
 	if err != nil {
+		h.Logger.ERROR.Printf("Error archiving/unarchiving inbox message: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to archive/unarchive inbox message", "details": err.Error()})
 		return
 	}

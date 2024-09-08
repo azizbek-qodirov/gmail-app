@@ -36,6 +36,7 @@ func (h *HTTPHandler) CreateDraft(c *gin.Context) {
 	}
 
 	if _, err = h.DS.Create(c.Request.Context(), &req); err != nil {
+		h.Logger.ERROR.Printf("Error creating draft: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create draft", "details": err.Error()})
 		return
 	}
@@ -69,6 +70,7 @@ func (h *HTTPHandler) UpdateDraft(c *gin.Context) {
 	}
 
 	if _, err = h.DS.Update(c.Request.Context(), &req); err != nil {
+		h.Logger.ERROR.Printf("Error updating draft: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update draft", "details": err.Error()})
 		return
 	}
@@ -94,6 +96,7 @@ func (h *HTTPHandler) DeleteDraft(c *gin.Context) {
 
 	_, err := h.DS.Delete(c.Request.Context(), &pb.ByID{Id: draftId})
 	if err != nil {
+		h.Logger.ERROR.Printf("Error deleting draft: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete draft", "details": err.Error()})
 		return
 	}
@@ -119,6 +122,7 @@ func (h *HTTPHandler) SendDraft(c *gin.Context) {
 
 	res, err := h.DS.SendDraft(c.Request.Context(), &pb.ByID{Id: draftId})
 	if err != nil {
+		h.Logger.ERROR.Printf("Error sending draft: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send draft", "details": err.Error()})
 		return
 	}

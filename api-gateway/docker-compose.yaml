@@ -1,8 +1,8 @@
 # version: '4.0'
 
 services:
-  auth-service:
-    container_name: auth_service 
+  gateway-service:
+    container_name: gateway_service 
     build: ./
     ports:
       - "8088:8088"
