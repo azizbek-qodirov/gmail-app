@@ -51,7 +51,7 @@ func Run(cf *config.Config) {
 	pb.RegisterUserServiceServer(server, service.NewUserService(db))
 	pb.RegisterDraftServiceServer(server, service.NewDraftService(db, db.DB))
 	pb.RegisterInboxServiceServer(server, service.NewInboxService(db))
-	pb.RegisterOutboxServiceServer(server, service.NewOutboxService(db))
+	pb.RegisterOutboxServiceServer(server, service.NewOutboxService(db, db.DB))
 	pb.RegisterAttachmentServiceServer(server, service.NewAttachmentService(db))
 
 	log.Println("Server started on port: ", cf.GRPCPort)

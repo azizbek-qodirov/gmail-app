@@ -4,8 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	pb "gmail-service/internal/pkg/genproto"
 	"time"
+
+	"github.com/lib/pq"
 )
 
 type InboxRepo struct {
@@ -80,6 +83,9 @@ func (r *InboxRepo) GetAll(ctx context.Context, req *pb.InboxMessageGetAllReq) (
 			o.subject,
 			o.body,
 			o.attachment_ids,
+			o.receiver_to_emails,
+			o.receiver_cc_emails,
+			CASE WHEN i.type = 'bcc' THEN o.receiver_bcc_emails ELSE NULL END AS receiver_bcc_emails,
 			o.is_draft,
 			o.is_archived,
 			o.is_starred,
@@ -95,20 +101,98 @@ func (r *InboxRepo) GetAll(ctx context.Context, req *pb.InboxMessageGetAllReq) (
 		FROM inbox AS i
 		JOIN outbox AS o ON i.outbox_id = o.id
 		JOIN users AS u ON o.sender_id = u.id
-		WHERE i.receiver_id = $1 AND i.deleted_at = 0
+		WHERE i.receiver_id = $1 
 	`
 
-	rows, err := r.db.QueryContext(ctx, query, req.Body.SenderId)
+	var args []interface{}
+	args = append(args, req.Body.SenderId)
+	argCount := 2
+
+	if req.Body.Query != "" {
+		query += fmt.Sprintf(" AND (o.subject ILIKE $%d OR o.body ILIKE $%d)", argCount, argCount)
+		args = append(args, "%"+req.Body.Query+"%", "%"+req.Body.Query+"%")
+		argCount++
+	}
+
+	if req.Body.SenderId != "" {
+		query += fmt.Sprintf(" AND o.sender_id = $%d", argCount)
+		args = append(args, req.Body.SenderId)
+		argCount++
+	}
+
+	if req.Body.Type != "" {
+		query += fmt.Sprintf(" AND i.type = $%d", argCount)
+		args = append(args, req.Body.Type)
+		argCount++
+	}
+
+	if req.Body.IsSpam {
+		query += fmt.Sprintf(" AND i.is_spam = $%d", argCount)
+		args = append(args, req.Body.IsSpam)
+		argCount++
+	}
+
+	if req.Body.IsArchived {
+		query += fmt.Sprintf(" AND i.is_archived = $%d", argCount)
+		args = append(args, req.Body.IsArchived)
+		argCount++
+	}
+
+	if req.Body.IsStarred {
+		query += fmt.Sprintf(" AND i.is_starred = $%d", argCount)
+		args = append(args, req.Body.IsStarred)
+		argCount++
+	}
+
+	if req.Body.IsTrashed {
+		query += fmt.Sprintf(" AND i.deleted_at = $%d", argCount)
+		args = append(args, 1)
+		argCount++
+	} else {
+		query += fmt.Sprintf(" AND i.deleted_at = $%d", argCount)
+		args = append(args, 0)
+		argCount++
+	}
+
+	if req.Body.SentFrom != "" {
+		query += fmt.Sprintf(" AND o.sent_at >= $%d", argCount)
+		args = append(args, req.Body.SentFrom)
+		argCount++
+	}
+
+	if req.Body.SentTo != "" {
+		query += fmt.Sprintf(" AND o.sent_at <= $%d", argCount)
+		args = append(args, req.Body.SentTo)
+		argCount++
+	}
+
+	if req.Body.UnreadOnly {
+		query += fmt.Sprintf(" AND i.read_at = $%d", argCount)
+		args = append(args, 0)
+		argCount++
+	}
+
+	query += fmt.Sprintf(" OFFSET $%d LIMIT $%d", argCount, argCount+1)
+	args = append(args, req.Pagination.Skip, req.Pagination.Limit)
+
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
 	for rows.Next() {
-		var message pb.InboxMessageGetRes
-		message.Outbox = &pb.OutboxMessageGetRes{}
-		message.Outbox.Sender = &pb.UserGetRes{}
-
+		message := pb.InboxMessageGetRes{
+			Outbox: &pb.OutboxMessageGetRes{
+				AttachmentIds: &pb.AttachmentIdsWrapper{},
+				Sender:        &pb.UserGetRes{},
+				Receivers: &pb.Receivers{
+					To:  &pb.MessageSendTo{},
+					Cc:  &pb.MessageSendCC{},
+					Bcc: &pb.MessageSendBCC{},
+				},
+			},
+		}
 		err = rows.Scan(
 			&message.Id,
 			&message.ReceiverId,
@@ -121,7 +205,10 @@ func (r *InboxRepo) GetAll(ctx context.Context, req *pb.InboxMessageGetAllReq) (
 			&message.Outbox.Id,
 			&message.Outbox.Subject,
 			&message.Outbox.Body,
-			&message.Outbox.AttachmentIds,
+			pq.Array(&message.Outbox.AttachmentIds.AttachmentIds),
+			pq.Array(&message.Outbox.Receivers.To.Emails),
+			pq.Array(&message.Outbox.Receivers.Cc.Emails),
+			pq.Array(&message.Outbox.Receivers.Bcc.Emails),
 			&message.Outbox.IsDraft,
 			&message.Outbox.IsArchived,
 			&message.Outbox.IsStarred,
@@ -153,8 +240,15 @@ func (r *InboxRepo) GetAll(ctx context.Context, req *pb.InboxMessageGetAllReq) (
 
 func (r *InboxRepo) GetByID(ctx context.Context, req *pb.ByID) (*pb.InboxMessageGetRes, error) {
 	var message pb.InboxMessageGetRes
-	message.Outbox = &pb.OutboxMessageGetRes{}
-	message.Outbox.Sender = &pb.UserGetRes{}
+	message.Outbox = &pb.OutboxMessageGetRes{
+		AttachmentIds: &pb.AttachmentIdsWrapper{},
+		Sender:        &pb.UserGetRes{},
+		Receivers: &pb.Receivers{
+			To:  &pb.MessageSendTo{},
+			Cc:  &pb.MessageSendCC{},
+			Bcc: &pb.MessageSendBCC{},
+		},
+	}
 
 	query := `
 		SELECT 
@@ -170,6 +264,9 @@ func (r *InboxRepo) GetByID(ctx context.Context, req *pb.ByID) (*pb.InboxMessage
 			o.subject,
 			o.body,
 			o.attachment_ids,
+			o.receiver_to_emails,
+			o.receiver_cc_emails,
+			CASE WHEN i.type = 'bcc' THEN o.receiver_bcc_emails ELSE NULL END AS receiver_bcc_emails, -- Conditional BCC
 			o.is_draft,
 			o.is_archived,
 			o.is_starred,
@@ -201,7 +298,10 @@ func (r *InboxRepo) GetByID(ctx context.Context, req *pb.ByID) (*pb.InboxMessage
 		&message.Outbox.Id,
 		&message.Outbox.Subject,
 		&message.Outbox.Body,
-		&message.Outbox.AttachmentIds,
+		pq.Array(&message.Outbox.AttachmentIds.AttachmentIds),
+		pq.Array(&message.Outbox.Receivers.To.Emails),
+		pq.Array(&message.Outbox.Receivers.Cc.Emails),
+		pq.Array(&message.Outbox.Receivers.Bcc.Emails),
 		&message.Outbox.IsDraft,
 		&message.Outbox.IsArchived,
 		&message.Outbox.IsStarred,

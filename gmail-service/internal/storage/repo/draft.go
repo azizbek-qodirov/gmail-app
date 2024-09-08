@@ -7,7 +7,6 @@ import (
 	pb "gmail-service/internal/pkg/genproto"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/lib/pq"
 )
 
@@ -33,7 +32,7 @@ func (r *DraftRepo) Create(ctx context.Context, req *pb.DraftCreateUpdateReq) (*
 				receiver_bcc_emails, 
 				is_draft
 			)
-		VALUES ($1, $2, $3, $4, true)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, true)
 	`
 	res, err := r.db.ExecContext(
 		ctx,
@@ -62,7 +61,7 @@ func (r *DraftRepo) Update(ctx context.Context, req *pb.DraftCreateUpdateReq) (*
 		UPDATE outbox
 		SET subject = $1,
 			body = $2,
-			attachment_ids = $3
+			attachment_ids = $3,
 			receiver_to_emails = $4,
 			receiver_cc_emails = $5,
 			receiver_bcc_emails = $6
@@ -125,49 +124,66 @@ func (r *DraftRepo) SendDraft(ctx context.Context, req *pb.ByID) (*pb.MessageSen
 		return nil, err
 	}
 	defer tx.Rollback()
-
-	var draft pb.OutboxMessageSentBody
-	var draftId uuid.UUID
-
-	query := `
-		SELECT id, subject, body, attachment_ids 
-		FROM outbox
-		WHERE id = $1 AND is_draft = true
-	`
-	row := tx.QueryRowContext(ctx, query, req.Id)
-	err = row.Scan(
-		&draftId,
-		&draft.Subject,
-		&draft.Body,
-		&draft.AttachmentIds,
-	)
+	exists, err := r.IsDraftExists(ctx, req)
 	if err != nil {
+		if err2 := tx.Rollback(); err2 != nil {
+			return nil, err
+		}
 		return nil, err
 	}
+	if !exists {
+		if err2 := tx.Rollback(); err2 != nil {
+			return nil, err
+		}
+		return nil, errors.New("draft not found")
+	}
 
-	query = `
+	query := `
 		UPDATE outbox
 		SET is_draft = false,
 			sent_at = $1
 		WHERE id = $2
 	`
-	_, err = tx.ExecContext(ctx, query, time.Now(), draftId)
+	_, err = tx.ExecContext(ctx, query, time.Now(), req.Id)
 	if err != nil {
+		if err2 := tx.Rollback(); err2 != nil {
+			return nil, err
+		}
 		return nil, err
 	}
 
 	var sent int64 = 0
 	var failed int64 = 0
 	var failedEmails []string
+	var receiverToEmails, receiverCcEmails, receiverBccEmails []string
 
-	for _, receiver := range draft.Receivers.To.Emails {
+	query = `
+		SELECT 
+			receiver_to_emails, 
+			receiver_cc_emails, 
+			receiver_bcc_emails 
+		FROM outbox WHERE id = $1
+	`
+	err = tx.QueryRowContext(ctx, query, req.Id).Scan(
+		pq.Array(&receiverToEmails),
+		pq.Array(&receiverCcEmails),
+		pq.Array(&receiverBccEmails),
+	)
+	if err != nil {
+		if err2 := tx.Rollback(); err2 != nil {
+			return nil, err
+		}
+		return nil, err
+	}
+
+	for _, receiver := range receiverToEmails {
 		query = `
 			INSERT INTO inbox (outbox_id, receiver_id, type)
 			SELECT $1, id, 'to'
 			FROM users
 			WHERE email = $2
 		`
-		res, err := tx.ExecContext(ctx, query, draftId, receiver)
+		res, err := tx.ExecContext(ctx, query, req.Id, receiver)
 		if err != nil {
 			failed++
 			failedEmails = append(failedEmails, receiver)
@@ -182,14 +198,14 @@ func (r *DraftRepo) SendDraft(ctx context.Context, req *pb.ByID) (*pb.MessageSen
 		}
 	}
 
-	for _, cc := range draft.Receivers.Cc.Emails {
+	for _, cc := range receiverCcEmails {
 		query = `
 			INSERT INTO inbox (outbox_id, receiver_id, type)
 			SELECT $1, id, 'cc'
 			FROM users
 			WHERE email = $2
 		`
-		res, err := tx.ExecContext(ctx, query, draftId, cc)
+		res, err := tx.ExecContext(ctx, query, req.Id, cc)
 		if err != nil {
 			failed++
 			failedEmails = append(failedEmails, cc)
@@ -204,14 +220,14 @@ func (r *DraftRepo) SendDraft(ctx context.Context, req *pb.ByID) (*pb.MessageSen
 		}
 	}
 
-	for _, bcc := range draft.Receivers.Bcc.Emails {
+	for _, bcc := range receiverBccEmails {
 		query = `
 			INSERT INTO inbox (outbox_id, receiver_id, type)
 			SELECT $1, id, 'bcc'
 			FROM users
 			WHERE email = $2
 		`
-		res, err := tx.ExecContext(ctx, query, draftId, bcc)
+		res, err := tx.ExecContext(ctx, query, req.Id, bcc)
 		if err != nil {
 			failed++
 			failedEmails = append(failedEmails, bcc)
@@ -231,8 +247,20 @@ func (r *DraftRepo) SendDraft(ctx context.Context, req *pb.ByID) (*pb.MessageSen
 	}
 
 	return &pb.MessageSentRes{
-		TotalSent:    sent,
-		TotalFailed:  failed,
+		TotalSent:    &sent,
+		TotalFailed:  &failed,
 		FailedEmails: failedEmails,
 	}, nil
+}
+
+func (r *DraftRepo) IsDraftExists(ctx context.Context, req *pb.ByID) (bool, error) {
+	query := `SELECT EXISTS (SELECT 1 FROM outbox WHERE id = $1 AND is_draft = true)`
+
+	var exists bool
+	err := r.db.QueryRowContext(ctx, query, req.Id).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+
+	return exists, nil
 }
