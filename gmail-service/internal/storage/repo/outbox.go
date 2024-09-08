@@ -161,11 +161,12 @@ func (r *OutboxRepo) GetAll(ctx context.Context, req *pb.OutboxMessagesGetAllReq
 		    u.pfp_url
 		FROM outbox AS o
 		JOIN users AS u ON o.sender_id = u.id
-		WHERE 1 = 1
+		WHERE o.sender_id = $1
 	`
 
 	var args []interface{}
-	argCount := 1
+	argCount := 2
+	args = append(args, req.SenderId)
 
 	if req.Body.Query != "" {
 		query += fmt.Sprintf(" AND (o.subject ILIKE $%d OR o.body ILIKE $%d)", argCount, argCount)
@@ -315,7 +316,6 @@ func (r *OutboxRepo) Send(ctx context.Context, req *pb.OutboxMessageSentReq) (*p
 	).Scan(&messageId)
 
 	if err != nil {
-		fmt.Println(err)
 		if err2 := tx.Rollback(); err2 != nil {
 			return nil, err
 		}
@@ -325,9 +325,6 @@ func (r *OutboxRepo) Send(ctx context.Context, req *pb.OutboxMessageSentReq) (*p
 	var sent int64 = 0
 	var failed int64 = 0
 	var failedEmails []string
-	fmt.Println(req.Body.Receivers.To.Emails)
-	fmt.Println(req.Body.Receivers.Cc.Emails)
-	fmt.Println(req.Body.Receivers.Bcc.Emails)
 
 	for _, receiver := range req.Body.Receivers.To.Emails {
 		query = `

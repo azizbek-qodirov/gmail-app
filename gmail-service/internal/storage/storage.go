@@ -57,6 +57,7 @@ type InboxI interface {
 type AttachmentI interface {
 	Create(context.Context, *pb.AttachmentCreateReq) (*pb.AttachmentCreateRes, error)
 	GetByID(context.Context, *pb.ByID) (*pb.AttachmentGetRes, error)
-	Delete(context.Context, *pb.ByID) (*pb.Void, error)
+	Delete(context.Context, *pb.ByID) (*pb.AttachmentDeleteRes, error)
 	GetAll(context.Context, *pb.AttachmentGetAllReq) (*pb.AttachmentGetAllRes, error)
+	GetMyUploads(context.Context, *pb.ByID) (*pb.AttachmentGetAllRes, error)
 }

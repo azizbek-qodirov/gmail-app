@@ -1,12 +1,15 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
+	"api-gateway/internal/pkg/config"
 	pb "api-gateway/internal/pkg/genproto"
 
 	"github.com/gin-gonic/gin"
+	"github.com/minio/minio-go/v7"
 )
 
 // CreateAttachment godoc
@@ -23,6 +26,12 @@ import (
 // @Security BearerAuth
 // @Router /attachment [post]
 func (h *HTTPHandler) CreateAttachment(c *gin.Context) {
+	user_id, err := config.GetUserIDByClaims(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid file upload", "details": err.Error()})
@@ -30,20 +39,32 @@ func (h *HTTPHandler) CreateAttachment(c *gin.Context) {
 	}
 	defer file.Close()
 
-	// File size validation (adjust as needed)
-	if header.Size > 5*1024*1024 { // 5MB limit
-		c.JSON(http.StatusBadRequest, gin.H{"error": "File size too large. Maximum allowed size is 5MB"})
+	if header.Size > 10*1024*1024 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "File size too large. Maximum allowed size is 10MB"})
 		return
 	}
 
-	// ... (Your file upload logic to storage, e.g., Minio, S3) ...
+	uniqueFileName := config.GenRandomNum() + "_" + header.Filename
 
-	// Assuming you have uploaded the file and have the file URL
-	fileUrl := "http://your-storage-service/path/to/file" // Replace with actual URL
+	uploadInfo, err := h.Minio.Client.PutObject(
+		c.Request.Context(),
+		h.Minio.DefaultBucket(),
+		uniqueFileName,
+		file,
+		header.Size,
+		minio.PutObjectOptions{ContentType: header.Header.Get("Content-Type")},
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload file to Minio", "details": err.Error()})
+		return
+	}
+
+	fileUrl := fmt.Sprintf("http:localhost:9000/%s/%s", h.Minio.DefaultBucket(), uploadInfo.Key)
 
 	req := &pb.AttachmentCreateReq{
+		UserId:   user_id,
 		FileUrl:  fileUrl,
-		FileName: header.Filename,
+		FileName: uniqueFileName,
 		FileSize: strconv.FormatInt(header.Size, 10),
 		MimeType: header.Header.Get("Content-Type"),
 	}
@@ -108,11 +129,41 @@ func (h *HTTPHandler) GetAttachmentsByOutboxID(c *gin.Context) {
 func (h *HTTPHandler) DeleteAttachment(c *gin.Context) {
 	attachmentId := c.Param("id")
 
-	_, err := h.AS.Delete(c.Request.Context(), &pb.ByID{Id: attachmentId})
+	res, err := h.AS.Delete(c.Request.Context(), &pb.ByID{Id: attachmentId})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete attachment", "details": err.Error()})
 		return
 	}
+	if err = h.Minio.Client.RemoveObject(c.Request.Context(), h.Minio.DefaultBucket(), res.FileName, minio.RemoveObjectOptions{}); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete attachment from Minio", "details": err.Error()})
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Attachment deleted successfully"})
+}
 
-	c.JSON(http.StatusNoContent, gin.H{"message": "Attachment deleted successfully"})
+// GetMyUploads godoc
+// @Summary Get my uploads
+// @Description Retrieves all attachments associated with the authenticated user.
+// @Tags 07-Attachments
+// @Accept json
+// @Produce json
+// @Success 200 {object} pb.AttachmentGetAllRes "Attachments retrieved successfully"
+// @Failure 401 {object} string "Unauthorized"
+// @Failure 404 {object} string "Attachments not found"
+// @Failure 500 {object} string "Server error"
+// @Security BearerAuth
+// @Router /attachment/my-uploads [get]
+func (h *HTTPHandler) GetMyUploads(c *gin.Context) {
+	user_id, err := config.GetUserIDByClaims(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
+	res, err := h.AS.GetMyUploads(c.Request.Context(), &pb.ByID{Id: user_id})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get attachments", "details": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, res)
 }

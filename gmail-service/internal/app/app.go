@@ -54,7 +54,7 @@ func Run(cf *config.Config) {
 	pb.RegisterOutboxServiceServer(server, service.NewOutboxService(db, db.DB))
 	pb.RegisterAttachmentServiceServer(server, service.NewAttachmentService(db))
 
-	log.Println("Server started on port: ", cf.GRPCPort)
+	log.Println("Server started on port " + cf.GRPCPort)
 	if err = server.Serve(lis); err != nil {
 		log.Fatalf("failed to start server: %v", err)
 	}

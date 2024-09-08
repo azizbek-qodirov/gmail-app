@@ -70,6 +70,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/attachment/my-uploads": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves all attachments associated with the authenticated user.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "07-Attachments"
+                ],
+                "summary": "Get my uploads",
+                "responses": {
+                    "200": {
+                        "description": "Attachments retrieved successfully",
+                        "schema": {
+                            "$ref": "#/definitions/genproto.AttachmentGetAllRes"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Attachments not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/attachment/{id}": {
             "delete": {
                 "security": [
@@ -621,6 +667,12 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "Search query",
+                        "name": "query",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "description": "Filter by sender ID",
                         "name": "sender_id",
                         "in": "query"
@@ -647,6 +699,12 @@ const docTemplate = `{
                         "type": "boolean",
                         "description": "Filter by starred status",
                         "name": "is_starred",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Filter by if it is in trash",
+                        "name": "is_trashed",
                         "in": "query"
                     },
                     {
@@ -1204,19 +1262,31 @@ const docTemplate = `{
                     },
                     {
                         "type": "boolean",
+                        "description": "Filter by if it is in trash",
+                        "name": "is_trashed",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Filter by draft status",
+                        "name": "is_draft",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
                         "description": "Filter by starred status",
                         "name": "is_starred",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Filter by sent date (from)",
+                        "description": "Filter by sent date (from). syntax: 2024-09-07T12:18:28+00:00",
                         "name": "sent_from",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Filter by sent date (to)",
+                        "description": "Filter by sent date (to). syntax: 2024-09-07T12:18:28+00:00",
                         "name": "sent_to",
                         "in": "query"
                     },
@@ -1278,7 +1348,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/genproto.OutboxMessageSentReq"
+                            "$ref": "#/definitions/genproto.OutboxMessageSentBody"
                         }
                     }
                 ],
@@ -1952,6 +2022,9 @@ const docTemplate = `{
         "genproto.AttachmentCreateRes": {
             "type": "object",
             "properties": {
+                "file_id": {
+                    "type": "string"
+                },
                 "file_url": {
                     "type": "string"
                 }
@@ -1988,6 +2061,20 @@ const docTemplate = `{
                 },
                 "mime_type": {
                     "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "genproto.AttachmentIdsWrapper": {
+            "type": "object",
+            "properties": {
+                "attachment_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -2141,10 +2228,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "attachment_ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                    "$ref": "#/definitions/genproto.AttachmentIdsWrapper"
                 },
                 "body": {
                     "type": "string"
@@ -2194,17 +2278,6 @@ const docTemplate = `{
                     "$ref": "#/definitions/genproto.Receivers"
                 },
                 "subject": {
-                    "type": "string"
-                }
-            }
-        },
-        "genproto.OutboxMessageSentReq": {
-            "type": "object",
-            "properties": {
-                "body": {
-                    "$ref": "#/definitions/genproto.OutboxMessageSentBody"
-                },
-                "sender_id": {
                     "type": "string"
                 }
             }

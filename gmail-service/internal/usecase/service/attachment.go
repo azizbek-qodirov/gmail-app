@@ -24,10 +24,14 @@ func (s *AttachmentService) GetByID(ctx context.Context, req *pb.ByID) (*pb.Atta
 	return s.stg.Attachment().GetByID(ctx, req)
 }
 
-func (s *AttachmentService) Delete(ctx context.Context, req *pb.ByID) (*pb.Void, error) {
+func (s *AttachmentService) Delete(ctx context.Context, req *pb.ByID) (*pb.AttachmentDeleteRes, error) {
 	return s.stg.Attachment().Delete(ctx, req)
 }
 
 func (s *AttachmentService) GetAll(ctx context.Context, req *pb.AttachmentGetAllReq) (*pb.AttachmentGetAllRes, error) {
 	return s.stg.Attachment().GetAll(ctx, req)
+}
+
+func (s AttachmentService) GetMyUploads(ctx context.Context, req *pb.ByID) (*pb.AttachmentGetAllRes, error) {
+	return s.stg.Attachment().GetMyUploads(ctx, req)
 }

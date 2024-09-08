@@ -49,7 +49,7 @@ func (r *InboxRepo) Delete(ctx context.Context, req *pb.ByID) (*pb.Void, error) 
 		SET deleted_at = $1
 		WHERE id = $2
 	`
-	res, err := r.db.ExecContext(ctx, query, time.Now(), req.Id)
+	res, err := r.db.ExecContext(ctx, query, time.Now().Unix(), req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +105,7 @@ func (r *InboxRepo) GetAll(ctx context.Context, req *pb.InboxMessageGetAllReq) (
 	`
 
 	var args []interface{}
-	args = append(args, req.Body.SenderId)
+	args = append(args, req.ReceiverId)
 	argCount := 2
 
 	if req.Body.Query != "" {
@@ -174,7 +174,6 @@ func (r *InboxRepo) GetAll(ctx context.Context, req *pb.InboxMessageGetAllReq) (
 
 	query += fmt.Sprintf(" OFFSET $%d LIMIT $%d", argCount, argCount+1)
 	args = append(args, req.Pagination.Skip, req.Pagination.Limit)
-
 	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
@@ -330,7 +329,7 @@ func (r *InboxRepo) MarkAsRead(ctx context.Context, req *pb.ByID) (*pb.Void, err
 		WHERE id = $2 AND deleted_at = 0
 	`
 
-	res, err := r.db.ExecContext(ctx, query, time.Now(), req.Id)
+	res, err := r.db.ExecContext(ctx, query, time.Now().Unix(), req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -374,10 +373,15 @@ func (r *InboxRepo) MarkAsSpam(ctx context.Context, req *pb.ByID) (*pb.Void, err
 func (r *InboxRepo) MoveToTrash(ctx context.Context, req *pb.ByID) (*pb.Void, error) {
 	query := `
 		UPDATE inbox
-		SET deleted_at = $1
-		WHERE id = $2
+		SET deleted_at = 
+			CASE 
+				WHEN deleted_at = 0 THEN 1 
+				WHEN deleted_at = 1 THEN 0
+				ELSE deleted_at
+			END
+		WHERE id = $1 AND deleted_at = 0 OR deleted_at = 1
 	`
-	res, err := r.db.ExecContext(ctx, query, time.Now(), req.Id)
+	res, err := r.db.ExecContext(ctx, query, req.Id)
 	if err != nil {
 		return nil, err
 	}

@@ -47,3 +47,5 @@ func generateConfirmationCode() (int, error) {
 	}
 	return int(n.Int64()), nil
 }
+
+

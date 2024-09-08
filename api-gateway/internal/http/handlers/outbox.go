@@ -16,7 +16,7 @@ import (
 // @Tags 06-Outbox
 // @Accept json
 // @Produce json
-// @Param message body pb.OutboxMessageSentReq true "Message sending request"
+// @Param message body pb.OutboxMessageSentBody true "Message sending request"
 // @Success 201 {object} pb.MessageSentRes "Message sent successfully"
 // @Failure 400 {object} string "Invalid request payload"
 // @Failure 401 {object} string "Unauthorized"
@@ -24,24 +24,17 @@ import (
 // @Security BearerAuth
 // @Router /outbox [post]
 func (h *HTTPHandler) SendMessage(c *gin.Context) {
-	var (
-		req pb.OutboxMessageSentReq
-	)
+	req := pb.OutboxMessageSentReq{}
 
-	err := c.ShouldBindJSON(&req)
-	if err != nil {
+	if err := c.ShouldBindJSON(&req.Body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload", "details": err.Error()})
 		return
 	}
 
-	claims, err := config.GetClaims(c)
-	if err != nil {
+	if req.SenderId, err = config.GetUserIDByClaims(c); err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	userId := claims["user_id"].(string)
-
-	req.SenderId = userId
 
 	res, err := h.OS.Send(c.Request.Context(), &req)
 	if err != nil {
@@ -85,9 +78,11 @@ func (h *HTTPHandler) GetOutboxMessageByID(c *gin.Context) {
 // @Produce json
 // @Param query query string false "Search query"
 // @Param is_archived query bool false "Filter by archived status"
+// @Param is_trashed query bool false "Filter by if it is in trash"
+// @Param is_draft query bool false "Filter by draft status"
 // @Param is_starred query bool false "Filter by starred status"
-// @Param sent_from query string false "Filter by sent date (from)"
-// @Param sent_to query string false "Filter by sent date (to)"
+// @Param sent_from query string false "Filter by sent date (from). syntax: 2024-09-07T12:18:28+00:00"
+// @Param sent_to query string false "Filter by sent date (to). syntax: 2024-09-07T12:18:28+00:00"
 // @Param page query int false "Page number"
 // @Param limit query int false "Number of messages per page"
 // @Success 200 {object} pb.OutboxMessagesGetAllRes "Outbox messages retrieved successfully"
@@ -96,17 +91,25 @@ func (h *HTTPHandler) GetOutboxMessageByID(c *gin.Context) {
 // @Security BearerAuth
 // @Router /outbox [get]
 func (h *HTTPHandler) GetAllOutboxMessages(c *gin.Context) {
+	user_id, err := config.GetUserIDByClaims(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
 	req := &pb.OutboxMessagesGetAllReq{
+		SenderId: user_id,
 		Body: &pb.OutboxMessagesGetAllBody{
 			Query:      c.Query("query"),
 			IsArchived: c.Query("is_archived") == "true",
+			IsTrashed:  c.Query("is_trashed") == "true",
+			IsDraft:    c.Query("is_draft") == "true",
 			IsStarred:  c.Query("is_starred") == "true",
 			SentFrom:   c.Query("sent_from"),
 			SentTo:     c.Query("sent_to"),
 		},
 		Pagination: &pb.Pagination{
 			Skip:  0,
-			Limit: 10, // Default limit
+			Limit: 1000,
 		},
 	}
 
@@ -159,7 +162,7 @@ func (h *HTTPHandler) MoveOutboxMessageToTrash(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusNoContent, gin.H{"message": "Outbox message moved to trash successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "Outbox message moved to / retrived back from trash successfully"})
 }
 
 // DeleteOutboxMessage godoc
@@ -184,7 +187,7 @@ func (h *HTTPHandler) DeleteOutboxMessage(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusNoContent, gin.H{"message": "Outbox message deleted successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "Outbox message deleted successfully"})
 }
 
 // StarOutboxMessage godoc
@@ -209,7 +212,7 @@ func (h *HTTPHandler) StarOutboxMessage(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, &pb.Void{})
+	c.JSON(http.StatusOK, gin.H{"message": "Outbox message starred/unstarred successfully"})
 }
 
 // ArchiveOutboxMessage godoc
@@ -234,5 +237,5 @@ func (h *HTTPHandler) ArchiveOutboxMessage(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, &pb.Void{})
+	c.JSON(http.StatusOK, gin.H{"message": "Outbox message archived/unarchived successfully"})
 }

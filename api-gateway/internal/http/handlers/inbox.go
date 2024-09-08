@@ -41,11 +41,13 @@ func (h *HTTPHandler) GetInboxMessageByID(c *gin.Context) {
 // @Tags 04-Inbox
 // @Accept json
 // @Produce json
+// @Param query query string false "Search query"
 // @Param sender_id query string false "Filter by sender ID"
 // @Param type query string false "Filter by message type (to, cc, bcc)"
 // @Param is_spam query bool false "Filter by spam status"
 // @Param is_archived query bool false "Filter by archived status"
 // @Param is_starred query bool false "Filter by starred status"
+// @Param is_trashed query bool false "Filter by if it is in trash"
 // @Param sent_from query string false "Filter by sent date (from)"
 // @Param sent_to query string false "Filter by sent date (to)"
 // @Param unread_only query bool false "Filter by unread messages only"
@@ -57,27 +59,29 @@ func (h *HTTPHandler) GetInboxMessageByID(c *gin.Context) {
 // @Security BearerAuth
 // @Router /inbox [get]
 func (h *HTTPHandler) GetAllInboxMessages(c *gin.Context) {
-	claims, err := config.GetClaims(c)
+	userId, err := config.GetUserIDByClaims(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	userId := claims["user_id"].(string)
 
 	req := &pb.InboxMessageGetAllReq{
+		ReceiverId: userId,
 		Body: &pb.InboxMessageGetAllBody{
+			Query:      c.Query("query"),
 			SenderId:   c.Query("sender_id"),
 			Type:       c.Query("type"),
 			IsSpam:     c.Query("is_spam") == "true",
 			IsArchived: c.Query("is_archived") == "true",
 			IsStarred:  c.Query("is_starred") == "true",
+			IsTrashed:  c.Query("is_trashed") == "true",
 			SentFrom:   c.Query("sent_from"),
 			SentTo:     c.Query("sent_to"),
 			UnreadOnly: c.Query("unread_only") == "true",
 		},
 		Pagination: &pb.Pagination{
 			Skip:  0,
-			Limit: 10, // Default limit
+			Limit: 1000,
 		},
 	}
 
@@ -98,8 +102,6 @@ func (h *HTTPHandler) GetAllInboxMessages(c *gin.Context) {
 		}
 		req.Pagination.Limit = limit
 	}
-
-	req.Body.SenderId = userId // Set the authenticated user's ID
 
 	res, err := h.IS.GetAll(c.Request.Context(), req)
 	if err != nil {
@@ -182,7 +184,7 @@ func (h *HTTPHandler) MarkInboxMessageAsRead(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, &pb.Void{})
+	c.JSON(http.StatusOK, gin.H{"message": "Inbox message marked as read successfully"})
 }
 
 // MarkInboxMessageAsSpam godoc
@@ -207,7 +209,7 @@ func (h *HTTPHandler) MarkInboxMessageAsSpam(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, &pb.Void{})
+	c.JSON(http.StatusOK, gin.H{"message": "Inbox message marked as spam successfully"})
 }
 
 // StarInboxMessage godoc
@@ -232,7 +234,7 @@ func (h *HTTPHandler) StarInboxMessage(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, &pb.Void{})
+	c.JSON(http.StatusOK, gin.H{"message": "Inbox message starred/unstarred successfully"})
 }
 
 // ArchiveInboxMessage godoc
@@ -257,5 +259,5 @@ func (h *HTTPHandler) ArchiveInboxMessage(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, &pb.Void{})
+	c.JSON(http.StatusOK, gin.H{"message": "Inbox message archived/unarchived successfully"})
 }

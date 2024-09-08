@@ -45,7 +45,7 @@ func (h *HTTPHandler) ForgotPassword(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
 	}
-	err = config.SendConfirmationCode(user.Email, h.RDB, h.Logger)
+	err = config.SendConfirmationCode(*user.Email, h.RDB, h.Logger)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Server error sending confirmation code to email", "err": err.Error()})
 		return
@@ -147,7 +147,7 @@ func (h *HTTPHandler) SendCodeAgain(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
 	}
-	err = config.SendConfirmationCode(user.Email, h.RDB, h.Logger)
+	err = config.SendConfirmationCode(*user.Email, h.RDB, h.Logger)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Server error sending confirmation code to email", "err": err.Error()})
 		return

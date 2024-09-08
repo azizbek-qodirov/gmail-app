@@ -10,3 +10,6 @@
 2024-09-07 05:07:36 ERROR run.go:21 Minio not connected due to error: Get "http://localhost:9000/pfp-bucket/?location=": dial tcp 127.0.0.1:9000: connect: connection refused
 2024-09-07 09:36:34 ERROR run.go:21 Minio not connected due to error: Get "http://localhost:9000/pfp-bucket/?location=": dial tcp 127.0.0.1:9000: connect: connection refused
 2024-09-07 12:47:14 INFO run.go:21 New account registered to the system:  qodirovazizbek570@gmail.com
+2024-09-07 15:34:39 INFO run.go:21 New account registered to the system:  qodirovazizbek570@gmail.com
+2024-09-07 15:34:39 INFO run.go:21 New account registered to the system:  qodirovazizbek249@gmail.com
+2024-09-08 10:35:00 INFO run.go:21 New account registered to the system:  cospurofyo@gufum.com

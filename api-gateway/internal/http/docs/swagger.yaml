@@ -1,6 +1,8 @@
 definitions:
   genproto.AttachmentCreateRes:
     properties:
+      file_id:
+        type: string
       file_url:
         type: string
     type: object
@@ -25,6 +27,15 @@ definitions:
         type: string
       mime_type:
         type: string
+      user_id:
+        type: string
+    type: object
+  genproto.AttachmentIdsWrapper:
+    properties:
+      attachment_ids:
+        items:
+          type: string
+        type: array
     type: object
   genproto.ByEmail:
     properties:
@@ -123,9 +134,7 @@ definitions:
   genproto.OutboxMessageGetRes:
     properties:
       attachment_ids:
-        items:
-          type: string
-        type: array
+        $ref: '#/definitions/genproto.AttachmentIdsWrapper'
       body:
         type: string
       deleted_at:
@@ -158,13 +167,6 @@ definitions:
       receivers:
         $ref: '#/definitions/genproto.Receivers'
       subject:
-        type: string
-    type: object
-  genproto.OutboxMessageSentReq:
-    properties:
-      body:
-        $ref: '#/definitions/genproto.OutboxMessageSentBody'
-      sender_id:
         type: string
     type: object
   genproto.OutboxMessagesGetAllRes:
@@ -388,6 +390,35 @@ paths:
       security:
       - BearerAuth: []
       summary: Get attachments for an outbox message
+      tags:
+      - 07-Attachments
+  /attachment/my-uploads:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves all attachments associated with the authenticated user.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Attachments retrieved successfully
+          schema:
+            $ref: '#/definitions/genproto.AttachmentGetAllRes'
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: Attachments not found
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get my uploads
       tags:
       - 07-Attachments
   /confirm-registration:
@@ -643,6 +674,10 @@ paths:
       - application/json
       description: Retrieves all inbox messages for the authenticated user.
       parameters:
+      - description: Search query
+        in: query
+        name: query
+        type: string
       - description: Filter by sender ID
         in: query
         name: sender_id
@@ -662,6 +697,10 @@ paths:
       - description: Filter by starred status
         in: query
         name: is_starred
+        type: boolean
+      - description: Filter by if it is in trash
+        in: query
+        name: is_trashed
         type: boolean
       - description: Filter by sent date (from)
         in: query
@@ -1016,15 +1055,23 @@ paths:
         in: query
         name: is_archived
         type: boolean
+      - description: Filter by if it is in trash
+        in: query
+        name: is_trashed
+        type: boolean
+      - description: Filter by draft status
+        in: query
+        name: is_draft
+        type: boolean
       - description: Filter by starred status
         in: query
         name: is_starred
         type: boolean
-      - description: Filter by sent date (from)
+      - description: 'Filter by sent date (from). syntax: 2024-09-07T12:18:28+00:00'
         in: query
         name: sent_from
         type: string
-      - description: Filter by sent date (to)
+      - description: 'Filter by sent date (to). syntax: 2024-09-07T12:18:28+00:00'
         in: query
         name: sent_to
         type: string
@@ -1066,7 +1113,7 @@ paths:
         name: message
         required: true
         schema:
-          $ref: '#/definitions/genproto.OutboxMessageSentReq'
+          $ref: '#/definitions/genproto.OutboxMessageSentBody'
       produces:
       - application/json
       responses:

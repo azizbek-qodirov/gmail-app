@@ -19,10 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion8
 
 const (
-	AttachmentService_Create_FullMethodName  = "/protos.AttachmentService/Create"
-	AttachmentService_GetByID_FullMethodName = "/protos.AttachmentService/GetByID"
-	AttachmentService_GetAll_FullMethodName  = "/protos.AttachmentService/GetAll"
-	AttachmentService_Delete_FullMethodName  = "/protos.AttachmentService/Delete"
+	AttachmentService_Create_FullMethodName       = "/protos.AttachmentService/Create"
+	AttachmentService_GetByID_FullMethodName      = "/protos.AttachmentService/GetByID"
+	AttachmentService_GetAll_FullMethodName       = "/protos.AttachmentService/GetAll"
+	AttachmentService_GetMyUploads_FullMethodName = "/protos.AttachmentService/GetMyUploads"
+	AttachmentService_Delete_FullMethodName       = "/protos.AttachmentService/Delete"
 )
 
 // AttachmentServiceClient is the client API for AttachmentService service.
@@ -32,7 +33,8 @@ type AttachmentServiceClient interface {
 	Create(ctx context.Context, in *AttachmentCreateReq, opts ...grpc.CallOption) (*AttachmentCreateRes, error)
 	GetByID(ctx context.Context, in *ByID, opts ...grpc.CallOption) (*AttachmentGetRes, error)
 	GetAll(ctx context.Context, in *AttachmentGetAllReq, opts ...grpc.CallOption) (*AttachmentGetAllRes, error)
-	Delete(ctx context.Context, in *ByID, opts ...grpc.CallOption) (*Void, error)
+	GetMyUploads(ctx context.Context, in *ByID, opts ...grpc.CallOption) (*AttachmentGetAllRes, error)
+	Delete(ctx context.Context, in *ByID, opts ...grpc.CallOption) (*AttachmentDeleteRes, error)
 }
 
 type attachmentServiceClient struct {
@@ -73,9 +75,19 @@ func (c *attachmentServiceClient) GetAll(ctx context.Context, in *AttachmentGetA
 	return out, nil
 }
 
-func (c *attachmentServiceClient) Delete(ctx context.Context, in *ByID, opts ...grpc.CallOption) (*Void, error) {
+func (c *attachmentServiceClient) GetMyUploads(ctx context.Context, in *ByID, opts ...grpc.CallOption) (*AttachmentGetAllRes, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Void)
+	out := new(AttachmentGetAllRes)
+	err := c.cc.Invoke(ctx, AttachmentService_GetMyUploads_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *attachmentServiceClient) Delete(ctx context.Context, in *ByID, opts ...grpc.CallOption) (*AttachmentDeleteRes, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AttachmentDeleteRes)
 	err := c.cc.Invoke(ctx, AttachmentService_Delete_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -90,7 +102,8 @@ type AttachmentServiceServer interface {
 	Create(context.Context, *AttachmentCreateReq) (*AttachmentCreateRes, error)
 	GetByID(context.Context, *ByID) (*AttachmentGetRes, error)
 	GetAll(context.Context, *AttachmentGetAllReq) (*AttachmentGetAllRes, error)
-	Delete(context.Context, *ByID) (*Void, error)
+	GetMyUploads(context.Context, *ByID) (*AttachmentGetAllRes, error)
+	Delete(context.Context, *ByID) (*AttachmentDeleteRes, error)
 	mustEmbedUnimplementedAttachmentServiceServer()
 }
 
@@ -107,7 +120,10 @@ func (UnimplementedAttachmentServiceServer) GetByID(context.Context, *ByID) (*At
 func (UnimplementedAttachmentServiceServer) GetAll(context.Context, *AttachmentGetAllReq) (*AttachmentGetAllRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAll not implemented")
 }
-func (UnimplementedAttachmentServiceServer) Delete(context.Context, *ByID) (*Void, error) {
+func (UnimplementedAttachmentServiceServer) GetMyUploads(context.Context, *ByID) (*AttachmentGetAllRes, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetMyUploads not implemented")
+}
+func (UnimplementedAttachmentServiceServer) Delete(context.Context, *ByID) (*AttachmentDeleteRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
 }
 func (UnimplementedAttachmentServiceServer) mustEmbedUnimplementedAttachmentServiceServer() {}
@@ -177,6 +193,24 @@ func _AttachmentService_GetAll_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AttachmentService_GetMyUploads_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ByID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AttachmentServiceServer).GetMyUploads(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AttachmentService_GetMyUploads_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AttachmentServiceServer).GetMyUploads(ctx, req.(*ByID))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AttachmentService_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ByID)
 	if err := dec(in); err != nil {
@@ -213,6 +247,10 @@ var AttachmentService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetAll",
 			Handler:    _AttachmentService_GetAll_Handler,
+		},
+		{
+			MethodName: "GetMyUploads",
+			Handler:    _AttachmentService_GetMyUploads_Handler,
 		},
 		{
 			MethodName: "Delete",

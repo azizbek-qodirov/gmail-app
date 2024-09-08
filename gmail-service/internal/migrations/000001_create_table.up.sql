@@ -69,5 +69,7 @@ CREATE TABLE IF NOT EXISTS attachments
     file_name VARCHAR(255) NOT NULL,
     file_size FLOAT NOT NULL,
     mime_type VARCHAR(255) NOT NULL,
+    user_id UUID REFERENCES users(id),
+    
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

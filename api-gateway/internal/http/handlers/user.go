@@ -232,6 +232,7 @@ func (h *HTTPHandler) DeleteAccount(c *gin.Context) {
 	claims, err := config.GetClaims(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, err.Error())
+		return
 	}
 
 	refreshToken, err := config.GetRefreshToken(c)

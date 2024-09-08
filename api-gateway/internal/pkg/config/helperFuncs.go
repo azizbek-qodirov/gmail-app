@@ -3,7 +3,9 @@ package config
 import (
 	"api-gateway/internal/http/token"
 	"errors"
+	"math/rand"
 	"regexp"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
@@ -75,4 +77,9 @@ func GetUserIDByClaims(c *gin.Context) (string, error) {
 		return "", err
 	}
 	return claims["user_id"].(string), nil
+}
+
+func GenRandomNum() string {
+	randomNum := rand.Intn(9000) + 1000
+	return strconv.Itoa(randomNum)
 }

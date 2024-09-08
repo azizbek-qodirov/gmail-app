@@ -1,7 +1,9 @@
 run:
-	go mod tidy
-	clear
-	go run main.go
+	go mod tidy;
+	make proto-gen;
+	make swag-gen;
+	clear;
+	go run main.go;
 
 migrate_up:
 	migrate -path internal/migrations -database postgres://mrbek:QodirovCoder@localhost:5432/gmail_db -verbose up
@@ -26,3 +28,7 @@ push:
 
 drun:
 	docker run -p 9000:9000 -p 9001:9001 --name minio -v ~/minio/data:/data -e "MINIO_ROOT_USER=user" -e "MINIO_ROOT_PASSWORD=password" quay.io/minio/minio server /data --console-address ":9001"
+
+spull:
+	cd gmailapp-submodule && git pull
+	make proto-gen

@@ -15,12 +15,14 @@ func JWTMiddleware(rdb *rdb.RedisClient) gin.HandlerFunc { // Inject Redis clien
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header is missing"})
+			c.Abort()
 			return
 		}
 
 		valid, err := token.ValidateToken(authHeader)
 		if err != nil || !valid {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token", "details": err.Error()})
+			c.Abort()
 			return
 		}
 

@@ -73,7 +73,7 @@ func (h *HTTPHandler) UpdateDraft(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, &pb.Void{})
+	c.JSON(http.StatusOK, gin.H{"message": "Draft successfully updated!"})
 }
 
 // DeleteDraft godoc
@@ -98,7 +98,7 @@ func (h *HTTPHandler) DeleteDraft(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusNoContent, gin.H{"message": "Draft deleted successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "Draft deleted successfully"})
 }
 
 // SendDraft godoc

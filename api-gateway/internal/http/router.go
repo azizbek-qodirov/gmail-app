@@ -90,6 +90,7 @@ func NewRouter(h *handlers.HTTPHandler, rdb *rdb.RedisClient, logger *l.Logger) 
 		protected.POST("/attachment", h.CreateAttachment)
 		protected.GET("/attachment/:outbox_id", h.GetAttachmentsByOutboxID)
 		protected.DELETE("/attachment/:id", h.DeleteAttachment)
+		protected.GET("/attachment/my-uploads", h.GetMyUploads)
 	}
 
 	return router

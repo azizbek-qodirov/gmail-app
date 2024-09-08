@@ -1,0 +1,24 @@
+{
+    "attachment_ids": [
+        ""
+    ],
+    "body": "Hello, How are you?",
+    "receivers": {
+        "bcc": {
+            "emails": [
+                ""
+            ]
+        },
+        "cc": {
+            "emails": [
+                ""
+            ]
+        },
+        "to": {
+            "emails": [
+                "qodirovazizbek249@gmail.com"
+            ]
+        }
+    },
+    "subject": "Greeting!"
+}

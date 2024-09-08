@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	pb "gmail-service/internal/pkg/genproto"
 	"time"
 
@@ -20,27 +21,29 @@ func NewAttachmentRepo(db *sql.DB) *AttachmentRepo {
 
 func (r *AttachmentRepo) Create(ctx context.Context, req *pb.AttachmentCreateReq) (*pb.AttachmentCreateRes, error) {
 	query := `
-		INSERT INTO attachments (file_url, file_name, file_size, mime_type, created_at)
-		VALUES ($1, $2, $3, $4, $5)
-		RETURNING file_url
+		INSERT INTO attachments (user_id, file_url, file_name, file_size, mime_type, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		RETURNING id, file_url
 	`
 
-	var fileUrl string
+	var fileId, fileUrl string
 	err := r.db.QueryRowContext(
 		ctx,
 		query,
+		req.UserId,
 		req.FileUrl,
 		req.FileName,
 		req.FileSize,
 		req.MimeType,
 		time.Now(),
-	).Scan(&fileUrl)
+	).Scan(&fileId, &fileUrl)
 
 	if err != nil {
 		return nil, err
 	}
 
 	return &pb.AttachmentCreateRes{
+		FileId:  fileId,
 		FileUrl: fileUrl,
 	}, nil
 }
@@ -51,6 +54,7 @@ func (r *AttachmentRepo) GetByID(ctx context.Context, req *pb.ByID) (*pb.Attachm
 	query := `
 		SELECT 
 			id,
+			user_id,
 			file_url,
 			file_name,
 			file_size,
@@ -61,6 +65,7 @@ func (r *AttachmentRepo) GetByID(ctx context.Context, req *pb.ByID) (*pb.Attachm
 
 	row := r.db.QueryRowContext(ctx, query, req.Id)
 	err := row.Scan(
+		&attachment.UserId,
 		&attachment.Id,
 		&attachment.FileUrl,
 		&attachment.FileName,
@@ -90,27 +95,20 @@ func (r *AttachmentRepo) IsExists(ctx context.Context, req *pb.ByID) (bool, erro
 	return exists, nil
 }
 
-func (r *AttachmentRepo) Delete(ctx context.Context, req *pb.ByID) (*pb.Void, error) {
+func (r *AttachmentRepo) Delete(ctx context.Context, req *pb.ByID) (*pb.AttachmentDeleteRes, error) {
+	var res pb.AttachmentDeleteRes
 	query := `
 		DELETE FROM attachments
-		WHERE id = $1
+		WHERE id = $1 RETURNING file_name
 	`
-
-	res, err := r.db.ExecContext(ctx, query, req.Id)
+	err := r.db.QueryRowContext(ctx, query, req.Id).Scan(&res.FileName)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("no attachment found with id %s", req.Id)
+		}
 		return nil, err
 	}
-
-	rows, err := res.RowsAffected()
-	if err != nil {
-		return nil, err
-	}
-
-	if rows == 0 {
-		return nil, sql.ErrNoRows
-	}
-
-	return nil, nil
+	return &res, nil
 }
 
 func (r *AttachmentRepo) GetAll(ctx context.Context, req *pb.AttachmentGetAllReq) (*pb.AttachmentGetAllRes, error) {
@@ -150,6 +148,52 @@ func (r *AttachmentRepo) GetAll(ctx context.Context, req *pb.AttachmentGetAllReq
 		var attachment pb.AttachmentGetRes
 		err = rows.Scan(
 			&attachment.Id,
+			&attachment.FileUrl,
+			&attachment.FileName,
+			&attachment.FileSize,
+			&attachment.MimeType,
+		)
+		if err != nil {
+			return nil, err
+		}
+		attachments = append(attachments, &attachment)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return &pb.AttachmentGetAllRes{
+		Attachments: attachments,
+	}, nil
+}
+
+func (r *AttachmentRepo) GetMyUploads(ctx context.Context, req *pb.ByID) (*pb.AttachmentGetAllRes, error) {
+	var attachments []*pb.AttachmentGetRes
+
+	query := `
+		SELECT 
+			id,
+			user_id,
+			file_url,
+			file_name,
+			file_size,
+			mime_type
+		FROM attachments
+		WHERE user_id = $1
+		ORDER BY created_at DESC
+	`
+	rows, err := r.db.QueryContext(ctx, query, req.Id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var attachment pb.AttachmentGetRes
+		err = rows.Scan(
+			&attachment.Id,
+			&attachment.UserId,
 			&attachment.FileUrl,
 			&attachment.FileName,
 			&attachment.FileSize,

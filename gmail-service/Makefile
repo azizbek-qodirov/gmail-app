@@ -1,7 +1,7 @@
 run:
 	go mod tidy
 	clear
-	go run main.go
+	go run cmd/main.go
 
 proto-gen:
 	protoc --go_out=./ --go-grpc_out=./ gmailapp-submodule/*.proto
@@ -18,3 +18,7 @@ migrate_force:
 
 migrate_file:
 	migrate create -ext sql -dir internal/migrations -seq create_table
+
+make spush:
+	cd gmailapp-submodule && git add . && git commit -m "protos changed" && git push
+	make proto-gen
