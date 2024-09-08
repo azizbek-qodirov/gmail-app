@@ -5,11 +5,12 @@ services:
     container_name: gateway_service 
     build: ./
     ports:
-      - "8088:8088"
+      - "8000:8000"
     networks:
-      - muallimah
+      - gmail_network
     depends_on:
       - redis
+      - minio
 
   redis:
     image: redis:latest
@@ -19,15 +20,31 @@ services:
     volumes:
       - redis-data:/data
     networks:
-      - muallimah
+      - gmail_network
 
+  minio:
+    container_name: minio
+    image: quay.io/minio/minio:latest
+    volumes:
+      - minio:/data
+    ports:
+      - 9000:9000
+      - 9001:9001
+    environment:
+      MINIO_ROOT_USER: 'user'
+      MINIO_ROOT_PASSWORD: 'password'
+      MINIO_ADDRESS: ':9000'
+      MINIO_CONSOLE_ADDRESS: ':9001'
+    command: minio server /data
+    networks:
+      - gmail_network
 
 networks:
-  muallimah:
+  gmail_network:
     external: true
-    name: muallimah
+    name: gmail_network
     driver: bridge
 
 volumes:
-  db:
   redis-data:
+  minio:

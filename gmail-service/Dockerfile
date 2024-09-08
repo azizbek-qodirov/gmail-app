@@ -22,6 +22,6 @@ COPY .env .env
 
 RUN chmod +x course_service
 
-EXPOSE 50052
+EXPOSE 50050
 
 CMD ["./course_service"]

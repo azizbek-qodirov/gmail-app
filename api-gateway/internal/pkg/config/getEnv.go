@@ -13,6 +13,7 @@ type Config struct {
 	GMAIL_GRPC_PORT   string
 	SENDER_EMAIL      string
 	APP_PASSWORD      string
+	REDIS_URL         string
 }
 
 func Load() Config {
@@ -22,6 +23,7 @@ func Load() Config {
 
 	config := Config{}
 
+	config.REDIS_URL = cast.ToString(coalesce("REDIS_URL", "localhost:6379"))
 	config.GMAIL_GRPC_PORT = cast.ToString(coalesce("GMAIL_GRPC_PORT", ":50050"))
 	config.GATEWAY_HTTP_PORT = cast.ToString(coalesce("GATEWAY_HTTP_PORT", ":8088"))
 	config.SENDER_EMAIL = cast.ToString(coalesce("SENDER_EMAIL", "email@example.com"))

@@ -15,7 +15,7 @@ type MinioClient struct {
 }
 
 func NewMinioClient() (*MinioClient, error) {
-	endpoint := "localhost:9000"
+	endpoint := "minio:9000"
 	accessKeyID := "user"
 	secretAccessKey := "password"
 	useSSL := false
@@ -29,7 +29,7 @@ func NewMinioClient() (*MinioClient, error) {
 		return nil, err
 	}
 
-	bucketName := "pfp-bucket"
+	bucketName := "data-bucket"
 
 	err = minioClient.MakeBucket(context.Background(), bucketName, minio.MakeBucketOptions{})
 	if err != nil {

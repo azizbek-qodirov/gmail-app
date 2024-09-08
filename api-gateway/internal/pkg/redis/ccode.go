@@ -1,7 +1,7 @@
-package config
+package rdb
 
 import (
-	rdb "api-gateway/internal/pkg/redis"
+	"api-gateway/internal/pkg/config"
 	"context"
 	"crypto/rand"
 	"fmt"
@@ -12,20 +12,19 @@ import (
 	"gopkg.in/gomail.v2"
 )
 
-func SendConfirmationCode(email string, rdb *rdb.RedisClient, logger *l.Logger) error {
-
+func SendConfirmationCode(email string, rdb *RedisClient, logger *l.Logger) error {
 	code, err := generateConfirmationCode()
 	if err != nil {
 		return err
 	}
 
 	m := gomail.NewMessage()
-	m.SetHeader("From", Load().SENDER_EMAIL)
+	m.SetHeader("From", config.Load().SENDER_EMAIL)
 	m.SetHeader("To", email)
 	m.SetHeader("Subject", "Password Recovery Code")
 	m.SetBody("text/plain", fmt.Sprintf("Your password recovery code is: %d", code))
 
-	d := gomail.NewDialer("smtp.gmail.com", 587, Load().SENDER_EMAIL, Load().APP_PASSWORD)
+	d := gomail.NewDialer("smtp.gmail.com", 587, config.Load().SENDER_EMAIL, config.Load().APP_PASSWORD)
 
 	if err := d.DialAndSend(m); err != nil {
 		logger.ERROR.Println("Error sending confirmation code: ", err.Error())
@@ -47,5 +46,3 @@ func generateConfirmationCode() (int, error) {
 	}
 	return int(n.Int64()), nil
 }
-
-

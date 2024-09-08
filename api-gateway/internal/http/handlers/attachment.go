@@ -60,7 +60,7 @@ func (h *HTTPHandler) CreateAttachment(c *gin.Context) {
 		return
 	}
 
-	fileUrl := fmt.Sprintf("http:localhost:9000/%s/%s", h.Minio.DefaultBucket(), uploadInfo.Key)
+	fileUrl := fmt.Sprintf("http://52.77.251.174:9000/%s/%s", h.Minio.DefaultBucket(), uploadInfo.Key)
 
 	req := &pb.AttachmentCreateReq{
 		UserId:   user_id,

@@ -1,6 +1,5 @@
 package kafka
 
-
 import (
 	"context"
 	"errors"

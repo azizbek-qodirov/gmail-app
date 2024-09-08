@@ -26,7 +26,7 @@ func Run(cf config.Config) {
 	})
 	em.CheckErr(err)
 
-	GmailServiceConn, err := grpc.NewClient(fmt.Sprintf("localhost%s", cf.GMAIL_GRPC_PORT), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	GmailServiceConn, err := grpc.NewClient(fmt.Sprintf("gmail_service%s", cf.GMAIL_GRPC_PORT), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	em.CheckErr(err)
 	defer GmailServiceConn.Close()
 

@@ -1,6 +1,7 @@
 package rdb
 
 import (
+	cf "api-gateway/internal/pkg/config"
 	"context"
 	"time"
 
@@ -13,7 +14,7 @@ type RedisClient struct {
 
 func NewRedisClient(c context.Context) (*RedisClient, error) {
 	rdb := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
+		Addr: cf.Load().REDIS_URL,
 		DB:   0,
 	})
 	if _, err := rdb.Ping(c).Result(); err != nil {

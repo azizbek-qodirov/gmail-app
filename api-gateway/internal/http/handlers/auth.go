@@ -3,6 +3,7 @@ package handlers
 import (
 	"api-gateway/internal/http/token"
 	"api-gateway/internal/pkg/config"
+	rdb "api-gateway/internal/pkg/redis"
 	"time"
 
 	"context"
@@ -61,7 +62,7 @@ func (h *HTTPHandler) Register(c *gin.Context) {
 
 	req.Password = hashedPassword
 
-	err = config.SendConfirmationCode(req.Email, h.RDB, h.Logger)
+	err = rdb.SendConfirmationCode(req.Email, h.RDB, h.Logger)
 	if err != nil {
 		h.Logger.ERROR.Printf("Error sending confirmation code: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Server error sending confirmation code", "err": err.Error()})
@@ -166,7 +167,7 @@ func (h *HTTPHandler) Login(c *gin.Context) {
 	}
 
 	if !user.IsConfirmed {
-		err = config.SendConfirmationCode(req.Email, h.RDB, h.Logger)
+		err = rdb.SendConfirmationCode(req.Email, h.RDB, h.Logger)
 		if err != nil {
 			h.Logger.ERROR.Printf("Error sending confirmation code: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Server error sending confirmation code", "err": err.Error()})

@@ -11,5 +11,5 @@ WORKDIR /app
 COPY --from=builder /app/myapp .
 
 COPY .env .
-EXPOSE 8088
+EXPOSE 8000
 CMD ["./myapp"]

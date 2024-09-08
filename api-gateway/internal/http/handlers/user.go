@@ -152,7 +152,7 @@ func (h *HTTPHandler) SetPFP(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Couldn't put object to minio", "details": err.Error()})
 		return
 	}
-	imgurl := fmt.Sprintf("http://localhost:9000/%s/%s", h.Minio.DefaultBucket(), info.Key)
+	imgurl := fmt.Sprintf("http://52.77.251.174:9000/%s/%s", h.Minio.DefaultBucket(), info.Key)
 
 	_, err = h.US.ChangeUserPFP(c, &pb.UserChangePFPReq{Email: email, PhotoUrl: imgurl})
 	if err != nil {

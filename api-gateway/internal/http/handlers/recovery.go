@@ -3,6 +3,7 @@ package handlers
 import (
 	"api-gateway/internal/pkg/config"
 	pb "api-gateway/internal/pkg/genproto"
+	rdb "api-gateway/internal/pkg/redis"
 	"context"
 	"net/http"
 
@@ -46,7 +47,7 @@ func (h *HTTPHandler) ForgotPassword(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
 	}
-	err = config.SendConfirmationCode(*user.Email, h.RDB, h.Logger)
+	err = rdb.SendConfirmationCode(*user.Email, h.RDB, h.Logger)
 	if err != nil {
 		h.Logger.ERROR.Printf("Error sending confirmation code: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Server error sending confirmation code to email", "err": err.Error()})
@@ -153,7 +154,7 @@ func (h *HTTPHandler) SendCodeAgain(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
 	}
-	err = config.SendConfirmationCode(*user.Email, h.RDB, h.Logger)
+	err = rdb.SendConfirmationCode(*user.Email, h.RDB, h.Logger)
 	if err != nil {
 		h.Logger.ERROR.Printf("Error sending confirmation code: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Server error sending confirmation code to email", "err": err.Error()})
