@@ -1,0 +1,1573 @@
+definitions:
+  genproto.AttachmentCreateRes:
+    properties:
+      file_id:
+        type: string
+      file_url:
+        type: string
+    type: object
+  genproto.AttachmentGetAllRes:
+    properties:
+      attachments:
+        items:
+          $ref: '#/definitions/genproto.AttachmentGetRes'
+        type: array
+      pagination:
+        $ref: '#/definitions/genproto.Pagination'
+    type: object
+  genproto.AttachmentGetRes:
+    properties:
+      file_name:
+        type: string
+      file_size:
+        type: string
+      file_url:
+        type: string
+      id:
+        type: string
+      mime_type:
+        type: string
+      user_id:
+        type: string
+    type: object
+  genproto.AttachmentIdsWrapper:
+    properties:
+      attachment_ids:
+        items:
+          type: string
+        type: array
+    type: object
+  genproto.ByEmail:
+    properties:
+      email:
+        type: string
+    type: object
+  genproto.ConfirmUserReq:
+    properties:
+      code:
+        type: string
+      email:
+        type: string
+    type: object
+  genproto.DraftCreateUpdateBody:
+    properties:
+      attachment_ids:
+        items:
+          type: string
+        type: array
+      body:
+        type: string
+      receivers:
+        $ref: '#/definitions/genproto.Receivers'
+      subject:
+        type: string
+    type: object
+  genproto.InboxMessageGetRes:
+    properties:
+      deleted_at:
+        type: string
+      id:
+        type: string
+      is_archived:
+        type: boolean
+      is_spam:
+        type: boolean
+      is_starred:
+        type: boolean
+      outbox:
+        $ref: '#/definitions/genproto.OutboxMessageGetRes'
+      read_at:
+        type: integer
+      receiver_id:
+        type: string
+      type:
+        type: string
+    type: object
+  genproto.InboxMessagesGetAllRes:
+    properties:
+      messages:
+        items:
+          $ref: '#/definitions/genproto.InboxMessageGetRes'
+        type: array
+      pagination:
+        $ref: '#/definitions/genproto.Pagination'
+    type: object
+  genproto.LoginReq:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  genproto.MessageSendBCC:
+    properties:
+      emails:
+        items:
+          type: string
+        type: array
+    type: object
+  genproto.MessageSendCC:
+    properties:
+      emails:
+        items:
+          type: string
+        type: array
+    type: object
+  genproto.MessageSendTo:
+    properties:
+      emails:
+        items:
+          type: string
+        type: array
+    type: object
+  genproto.MessageSentRes:
+    properties:
+      failed_emails:
+        items:
+          type: string
+        type: array
+      total_failed:
+        type: integer
+      total_sent:
+        type: integer
+    type: object
+  genproto.OutboxMessageGetRes:
+    properties:
+      attachment_ids:
+        $ref: '#/definitions/genproto.AttachmentIdsWrapper'
+      body:
+        type: string
+      deleted_at:
+        type: string
+      id:
+        type: string
+      is_archived:
+        type: boolean
+      is_draft:
+        type: boolean
+      is_starred:
+        type: boolean
+      receivers:
+        $ref: '#/definitions/genproto.Receivers'
+      sender:
+        $ref: '#/definitions/genproto.UserGetRes'
+      sent_at:
+        type: string
+      subject:
+        type: string
+    type: object
+  genproto.OutboxMessageSentBody:
+    properties:
+      attachment_ids:
+        items:
+          type: string
+        type: array
+      body:
+        type: string
+      receivers:
+        $ref: '#/definitions/genproto.Receivers'
+      subject:
+        type: string
+    type: object
+  genproto.OutboxMessagesGetAllRes:
+    properties:
+      messages:
+        items:
+          $ref: '#/definitions/genproto.OutboxMessageGetRes'
+        type: array
+    type: object
+  genproto.Pagination:
+    properties:
+      limit:
+        type: integer
+      skip:
+        type: integer
+    type: object
+  genproto.Receivers:
+    properties:
+      bcc:
+        $ref: '#/definitions/genproto.MessageSendBCC'
+      cc:
+        $ref: '#/definitions/genproto.MessageSendCC'
+      to:
+        $ref: '#/definitions/genproto.MessageSendTo'
+    type: object
+  genproto.UserChangePasswordReq:
+    properties:
+      email:
+        type: string
+      new_password:
+        type: string
+    type: object
+  genproto.UserCreateReqForSwagger:
+    properties:
+      dob:
+        type: string
+      email:
+        type: string
+      first_name:
+        type: string
+      gender:
+        type: string
+      last_name:
+        type: string
+      password:
+        type: string
+    type: object
+  genproto.UserGetRes:
+    properties:
+      dob:
+        type: string
+      email:
+        type: string
+      first_name:
+        type: string
+      gender:
+        type: string
+      id:
+        type: string
+      last_name:
+        type: string
+      pfp_url:
+        type: string
+    type: object
+  genproto.UserRecoverPasswordReq:
+    properties:
+      code:
+        type: string
+      email:
+        type: string
+      new_password:
+        type: string
+    type: object
+  genproto.UserUpdateBody:
+    properties:
+      dob:
+        type: string
+      first_name:
+        type: string
+      gender:
+        type: string
+      last_name:
+        type: string
+    type: object
+  genproto.Void:
+    type: object
+  token.Tokens:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /attachment:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Creates a new attachment associated with an outbox message.
+      parameters:
+      - description: Attachment file
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Attachment created successfully
+          schema:
+            $ref: '#/definitions/genproto.AttachmentCreateRes'
+        "400":
+          description: Invalid request payload
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Create a new attachment
+      tags:
+      - 07-Attachments
+  /attachment/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes an attachment by its ID.
+      parameters:
+      - description: Attachment ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Attachment deleted successfully
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: Attachment not found
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Delete an attachment
+      tags:
+      - 07-Attachments
+  /attachment/{outbox_id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves all attachments associated with an outbox message.
+      parameters:
+      - description: Outbox message ID
+        in: path
+        name: outbox_id
+        required: true
+        type: string
+      - description: Filter by MIME type
+        in: query
+        name: mime_type
+        type: string
+      - description: Filter by creation date (from)
+        in: query
+        name: created_from
+        type: string
+      - description: Filter by creation date (to)
+        in: query
+        name: created_to
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Number of attachments per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Attachments retrieved successfully
+          schema:
+            $ref: '#/definitions/genproto.AttachmentGetAllRes'
+        "400":
+          description: Invalid request parameters
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: Attachments not found
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get attachments for an outbox message
+      tags:
+      - 07-Attachments
+  /attachment/my-uploads:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves all attachments associated with the authenticated user.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Attachments retrieved successfully
+          schema:
+            $ref: '#/definitions/genproto.AttachmentGetAllRes'
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: Attachments not found
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get my uploads
+      tags:
+      - 07-Attachments
+  /confirm-registration:
+    post:
+      consumes:
+      - application/json
+      description: Confirms a user's registration using the code sent to their email.
+      parameters:
+      - description: Confirmation request
+        in: body
+        name: confirmation
+        required: true
+        schema:
+          $ref: '#/definitions/genproto.ConfirmUserReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: JWT tokens
+          schema:
+            $ref: '#/definitions/token.Tokens'
+        "400":
+          description: Invalid request payload
+          schema:
+            type: string
+        "401":
+          description: Incorrect verification code
+          schema:
+            type: string
+        "404":
+          description: Verification code expired or email not found
+          schema:
+            type: string
+      summary: Confirm registration with code
+      tags:
+      - 01-Authentication
+  /delete-account:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes the user's account permanently.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Account deleted successfully
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Delete user account
+      tags:
+      - 03-User-profile
+  /draft:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new draft message. Use empty string in order to not to
+        use this field.
+      parameters:
+      - description: Draft creation request
+        in: body
+        name: draft
+        required: true
+        schema:
+          $ref: '#/definitions/genproto.DraftCreateUpdateBody'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Draft created successfully
+          schema:
+            $ref: '#/definitions/genproto.Void'
+        "400":
+          description: Invalid request payload
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Create a new draft
+      tags:
+      - 05-Draft
+  /draft/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a draft message with the provided ID.
+      parameters:
+      - description: Draft ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Draft deleted successfully
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: Draft not found
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Delete a draft
+      tags:
+      - 05-Draft
+    put:
+      consumes:
+      - application/json
+      description: Updates a draft message with the provided ID. Use empty string
+        in order to not to use this field.
+      parameters:
+      - description: Draft ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Draft update request
+        in: body
+        name: draft
+        required: true
+        schema:
+          $ref: '#/definitions/genproto.DraftCreateUpdateBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Draft updated successfully
+          schema:
+            $ref: '#/definitions/genproto.Void'
+        "400":
+          description: Invalid request payload
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: Draft not found
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Update an existing draft
+      tags:
+      - 05-Draft
+  /draft/{id}/send:
+    post:
+      consumes:
+      - application/json
+      description: Sends a draft message with the provided ID.
+      parameters:
+      - description: Draft ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Draft sent successfully
+          schema:
+            $ref: '#/definitions/genproto.MessageSentRes'
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: Draft not found
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Send a draft
+      tags:
+      - 05-Draft
+  /forgot-password:
+    post:
+      consumes:
+      - application/json
+      description: Sends a confirmation code to email recovery password
+      parameters:
+      - description: User login credentials
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/genproto.ByEmail'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: Page not found
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Forgot passwrod
+      tags:
+      - 02-Password-recovery
+  /inbox:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves all inbox messages for the authenticated user.
+      parameters:
+      - description: Search query
+        in: query
+        name: query
+        type: string
+      - description: Filter by sender ID
+        in: query
+        name: sender_id
+        type: string
+      - description: Filter by message type (to, cc, bcc)
+        in: query
+        name: type
+        type: string
+      - description: Filter by spam status
+        in: query
+        name: is_spam
+        type: boolean
+      - description: Filter by archived status
+        in: query
+        name: is_archived
+        type: boolean
+      - description: Filter by starred status
+        in: query
+        name: is_starred
+        type: boolean
+      - description: Filter by if it is in trash
+        in: query
+        name: is_trashed
+        type: boolean
+      - description: Filter by sent date (from)
+        in: query
+        name: sent_from
+        type: string
+      - description: Filter by sent date (to)
+        in: query
+        name: sent_to
+        type: string
+      - description: Filter by unread messages only
+        in: query
+        name: unread_only
+        type: boolean
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Number of messages per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Inbox messages retrieved successfully
+          schema:
+            $ref: '#/definitions/genproto.InboxMessagesGetAllRes'
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get all inbox messages
+      tags:
+      - 04-Inbox
+  /inbox/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Permanently deletes an inbox message.
+      parameters:
+      - description: Inbox message ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Inbox message deleted successfully
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: Inbox message not found
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Delete inbox message
+      tags:
+      - 04-Inbox
+    get:
+      consumes:
+      - application/json
+      description: Retrieves an inbox message by its ID.
+      parameters:
+      - description: Inbox message ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Inbox message retrieved successfully
+          schema:
+            $ref: '#/definitions/genproto.InboxMessageGetRes'
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: Inbox message not found
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get inbox message by ID
+      tags:
+      - 04-Inbox
+  /inbox/{id}/archive:
+    put:
+      consumes:
+      - application/json
+      description: Archives or unarchives an inbox message.
+      parameters:
+      - description: Inbox message ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Inbox message archived/unarchived successfully
+          schema:
+            $ref: '#/definitions/genproto.Void'
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: Inbox message not found
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Archive inbox message
+      tags:
+      - 04-Inbox
+  /inbox/{id}/read:
+    put:
+      consumes:
+      - application/json
+      description: Marks an inbox message as read.
+      parameters:
+      - description: Inbox message ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Inbox message marked as read successfully
+          schema:
+            $ref: '#/definitions/genproto.Void'
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: Inbox message not found
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Mark inbox message as read
+      tags:
+      - 04-Inbox
+  /inbox/{id}/spam:
+    put:
+      consumes:
+      - application/json
+      description: Marks an inbox message as spam.
+      parameters:
+      - description: Inbox message ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Inbox message marked as spam successfully
+          schema:
+            $ref: '#/definitions/genproto.Void'
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: Inbox message not found
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Mark inbox message as spam
+      tags:
+      - 04-Inbox
+  /inbox/{id}/star:
+    put:
+      consumes:
+      - application/json
+      description: Stars or unstars an inbox message.
+      parameters:
+      - description: Inbox message ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Inbox message starred/unstarred successfully
+          schema:
+            $ref: '#/definitions/genproto.Void'
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: Inbox message not found
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Star inbox message
+      tags:
+      - 04-Inbox
+  /inbox/{id}/trash:
+    put:
+      consumes:
+      - application/json
+      description: Moves an inbox message to the trash folder.
+      parameters:
+      - description: Inbox message ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Inbox message moved to trash successfully
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: Inbox message not found
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Move inbox message to trash
+      tags:
+      - 04-Inbox
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user with email and password
+      parameters:
+      - description: User login credentials
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/genproto.LoginReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: JWT tokens
+          schema:
+            $ref: '#/definitions/token.Tokens'
+        "400":
+          description: Invalid request payload
+          schema:
+            type: string
+        "401":
+          description: Invalid email or password
+          schema:
+            type: string
+      summary: Login a user
+      tags:
+      - 01-Authentication
+  /logout:
+    post:
+      consumes:
+      - application/json
+      description: Logs out the user by blacklisting their refresh token.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully logged out
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Logout a user
+      tags:
+      - 01-Authentication
+  /outbox:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves all outbox messages for the authenticated user.
+      parameters:
+      - description: Search query
+        in: query
+        name: query
+        type: string
+      - description: Filter by archived status
+        in: query
+        name: is_archived
+        type: boolean
+      - description: Filter by if it is in trash
+        in: query
+        name: is_trashed
+        type: boolean
+      - description: Filter by draft status
+        in: query
+        name: is_draft
+        type: boolean
+      - description: Filter by starred status
+        in: query
+        name: is_starred
+        type: boolean
+      - description: 'Filter by sent date (from). syntax: 2024-09-07T12:18:28+00:00'
+        in: query
+        name: sent_from
+        type: string
+      - description: 'Filter by sent date (to). syntax: 2024-09-07T12:18:28+00:00'
+        in: query
+        name: sent_to
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Number of messages per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Outbox messages retrieved successfully
+          schema:
+            $ref: '#/definitions/genproto.OutboxMessagesGetAllRes'
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get all outbox messages
+      tags:
+      - 06-Outbox
+    post:
+      consumes:
+      - application/json
+      description: Sends a new message to the specified recipients.
+      parameters:
+      - description: Message sending request
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/genproto.OutboxMessageSentBody'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Message sent successfully
+          schema:
+            $ref: '#/definitions/genproto.MessageSentRes'
+        "400":
+          description: Invalid request payload
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "429":
+          description: Too many requests, please try again later
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Send a new message
+      tags:
+      - 06-Outbox
+  /outbox/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Permanently deletes an outbox message.
+      parameters:
+      - description: Outbox message ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Outbox message deleted successfully
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: Outbox message not found
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Delete outbox message
+      tags:
+      - 06-Outbox
+    get:
+      consumes:
+      - application/json
+      description: Retrieves an outbox message by its ID.
+      parameters:
+      - description: Outbox message ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Outbox message retrieved successfully
+          schema:
+            $ref: '#/definitions/genproto.OutboxMessageGetRes'
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: Outbox message not found
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get outbox message by ID
+      tags:
+      - 06-Outbox
+  /outbox/{id}/archive:
+    put:
+      consumes:
+      - application/json
+      description: Archives or unarchives an outbox message.
+      parameters:
+      - description: Outbox message ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Outbox message archived/unarchived successfully
+          schema:
+            $ref: '#/definitions/genproto.Void'
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: Outbox message not found
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Archive outbox message
+      tags:
+      - 06-Outbox
+  /outbox/{id}/star:
+    put:
+      consumes:
+      - application/json
+      description: Stars or unstars an outbox message.
+      parameters:
+      - description: Outbox message ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Outbox message starred/unstarred successfully
+          schema:
+            $ref: '#/definitions/genproto.Void'
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: Outbox message not found
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Star outbox message
+      tags:
+      - 06-Outbox
+  /outbox/{id}/trash:
+    put:
+      consumes:
+      - application/json
+      description: Moves an outbox message to the trash folder.
+      parameters:
+      - description: Outbox message ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Outbox message moved to trash successfully
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: Outbox message not found
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Move outbox message to trash
+      tags:
+      - 06-Outbox
+  /profile:
+    get:
+      consumes:
+      - application/json
+      description: Get the profile of the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/genproto.UserGetRes'
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: User not found
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get user profile
+      tags:
+      - 03-User-profile
+  /recover-password:
+    post:
+      consumes:
+      - application/json
+      description: Verifies the code and updates the password
+      parameters:
+      - description: Recover Password Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/genproto.UserRecoverPasswordReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Password successfully updated
+          schema:
+            type: string
+        "400":
+          description: Invalid request payload
+          schema:
+            type: string
+        "401":
+          description: Incorrect verification code
+          schema:
+            type: string
+        "404":
+          description: Verification code expired or email not found
+          schema:
+            type: string
+        "500":
+          description: Error updating password
+          schema:
+            type: string
+      summary: Recover password (Use this one after sending verification code)
+      tags:
+      - 02-Password-recovery
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user with email, username, and password
+      parameters:
+      - description: User registration request
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/genproto.UserCreateReqForSwagger'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: JWT tokens
+          schema:
+            type: string
+        "400":
+          description: Invalid request payload
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      summary: Register a new user
+      tags:
+      - 01-Authentication
+  /send-code-again:
+    post:
+      consumes:
+      - application/json
+      description: Sends a confirmation code to email recovery password again
+      parameters:
+      - description: User login credentials
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/genproto.ByEmail'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Code sent
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: Page not found
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      summary: Sends code again if user didn't recieve the code
+      tags:
+      - 02-Password-recovery
+  /set-pfp:
+    post:
+      consumes:
+      - multipart/mixed
+      description: Adds a profile image to user.
+      parameters:
+      - description: Profile image
+        in: formData
+        name: image
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Profile image is added
+          schema:
+            type: string
+        "400":
+          description: Invalid request payload
+          schema:
+            type: string
+        "500":
+          description: Server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Set a profile picture
+      tags:
+      - 03-User-profile
+  /user:
+    put:
+      consumes:
+      - application/json
+      description: Update user's data
+      parameters:
+      - description: User Request Body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/genproto.UserUpdateBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User updated successfully
+          schema:
+            type: string
+        "400":
+          description: Invalid request payload
+          schema:
+            type: string
+        "500":
+          description: Error updating User
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Update user's profile. In order not to update any field, leave it as
+        it is like "string" or ""
+      tags:
+      - 03-User-profile
+  /user-password:
+    put:
+      consumes:
+      - application/json
+      description: Updates the password to new one
+      parameters:
+      - description: Change Password Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/genproto.UserChangePasswordReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Password successfully updated
+          schema:
+            type: string
+        "400":
+          description: Invalid request payload
+          schema:
+            type: string
+        "401":
+          description: Incorrect verification code
+          schema:
+            type: string
+        "404":
+          description: Verification code expired or email not found
+          schema:
+            type: string
+        "500":
+          description: Error updating password
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Change password
+      tags:
+      - 03-User-profile
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
+tags:
+- description: User registration, login, and email confirmation methods
+  name: 01-Authentication
+- description: Password recovery and reset functionality
+  name: 02-Password-recovery
+- description: User profile management including updates and deletion
+  name: 03-User-profile
+- description: Managing inbox messages such as reading, starring, and marking as spam
+  name: 04-Inbox
+- description: Create, update, and send email drafts
+  name: 05-Draft
+- description: Sending emails and managing sent items
+  name: 06-Outbox
+- description: Handling email attachments including uploading and deleting
+  name: 07-Attachments
