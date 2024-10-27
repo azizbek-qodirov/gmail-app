@@ -39,8 +39,8 @@ func Run(cf config.Config) {
 	handler := handlers.NewHandler(GmailServiceConn, logger)
 	router := api.NewRouter(handler, rdb, logger)
 
-	fmt.Println("Server is running on port:", cf.GATEWAY_HTTP_PORT)
+	logger.INFO.Println("Server is running on port:", cf.GATEWAY_HTTP_PORT)
 	if err := router.Run(cf.GATEWAY_HTTP_PORT); err != nil {
-		panic(err)
+		logger.ERROR.Panicln(err.Error())
 	}
 }

@@ -1,0 +1,1 @@
+2024-10-28 03:36:52 ERROR app.go:21 Redis not connected due to error: dial tcp: lookup redis on 127.0.0.53:53: server misbehaving
