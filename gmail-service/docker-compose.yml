@@ -1,0 +1,56 @@
+version: '4.0'
+
+services:
+  migrate:
+    image: migrate/migrate
+    networks:
+      - gmail_network
+    volumes:
+      - ./internal/migrations:/migrations
+    command: [ "-path", "/migrations", "-database",  
+                "postgres://postgres:QodirovCoder@gmailapp_db:5432/gmail_db?sslmode=disable", 
+                "up" ]
+    depends_on:
+      - postgres-db
+
+  postgres-db:
+    container_name: gmailapp_db
+    image: postgres:latest
+    environment:
+      PGUSER: postgres
+      POSTGRES_PASSWORD: QodirovCoder
+      PGDATA: /data/postgres
+      POSTGRES_DB: gmail_db
+    volumes:
+      - db:/gmail-database/gmail-memory
+    ports:
+      - "5433:5432"
+    networks:
+      - gmail_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 5   
+
+
+  gmail_service:
+    container_name: gmail_service
+    build: .
+    depends_on:
+      - postgres-db
+      
+    ports:
+      - "50050:50050"
+    networks:
+      - gmail_network
+volumes:
+  minio:
+  db:
+
+networks:
+  gmail_network:
+    external: true
+    name: gmail_network
+    driver: bridge
