@@ -1,0 +1,7 @@
+DROP TABLE IF EXISTS attachments;
+DROP TABLE IF EXISTS inbox;
+DROP TABLE IF EXISTS outbox;
+DROP TABLE IF EXISTS users;
+
+DROP TYPE IF EXISTS gender_type;
+DROP TYPE IF EXISTS message_type;
