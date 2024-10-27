@@ -3,6 +3,8 @@ package handlers
 import (
 	"api-gateway/internal/pkg/config"
 	pb "api-gateway/internal/pkg/genproto"
+	"fmt"
+	"time"
 
 	"net/http"
 	"strconv"
@@ -36,7 +38,25 @@ func (h *HTTPHandler) SendMessage(c *gin.Context) {
 		return
 	}
 
+	rateLimitKey := fmt.Sprintf("ratelimit:%s", req.SenderId)
+	exists, err := h.RDB.DB.Exists(c.Request.Context(), rateLimitKey).Result()
+	if err != nil {
+		h.Logger.ERROR.Printf("Error checking rate limit: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check rate limit", "details": err.Error()})
+		return
+	}
 
+	if exists == 1 {
+		c.JSON(http.StatusTooManyRequests, gin.H{"error": "Too many requests, please wait 10 seconds before sending another message"})
+		return
+	}
+
+	err = h.RDB.DB.Set(c.Request.Context(), rateLimitKey, "active", 30*time.Second).Err()
+	if err != nil {
+		h.Logger.ERROR.Printf("Error setting rate limit: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to set rate limit", "details": err.Error()})
+		return
+	}
 
 	res, err := h.OS.Send(c.Request.Context(), &req)
 	if err != nil {
@@ -146,7 +166,7 @@ func (h *HTTPHandler) GetAllOutboxMessages(c *gin.Context) {
 }
 
 // MoveOutboxMessageToTrash godoc
-// @Summary Move outbox message to trash
+// @Summary Move outbox message to trash/untrash
 // @Description Moves an outbox message to the trash folder or gets it back if it is already in trash.
 // @Tags 06-Outbox
 // @Accept json
