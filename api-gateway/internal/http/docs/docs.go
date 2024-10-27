@@ -985,7 +985,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Marks an inbox message as spam.",
+                "description": "Marks an inbox message as spam or unspam if alreadys spammed.",
                 "consumes": [
                     "application/json"
                 ],
@@ -995,7 +995,7 @@ const docTemplate = `{
                 "tags": [
                     "04-Inbox"
                 ],
-                "summary": "Mark inbox message as spam",
+                "summary": "Mark inbox message as spam/unspam",
                 "parameters": [
                     {
                         "type": "string",
@@ -1611,7 +1611,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Moves an outbox message to the trash folder.",
+                "description": "Moves an outbox message to the trash folder or gets it back if it is already in trash.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1621,7 +1621,7 @@ const docTemplate = `{
                 "tags": [
                     "06-Outbox"
                 ],
-                "summary": "Move outbox message to trash",
+                "summary": "Move outbox message to trash/untrash",
                 "parameters": [
                     {
                         "type": "string",

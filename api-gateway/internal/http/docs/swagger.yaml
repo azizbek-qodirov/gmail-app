@@ -885,7 +885,7 @@ paths:
     put:
       consumes:
       - application/json
-      description: Marks an inbox message as spam.
+      description: Marks an inbox message as spam or unspam if alreadys spammed.
       parameters:
       - description: Inbox message ID
         in: path
@@ -913,7 +913,7 @@ paths:
             type: string
       security:
       - BearerAuth: []
-      summary: Mark inbox message as spam
+      summary: Mark inbox message as spam/unspam
       tags:
       - 04-Inbox
   /inbox/{id}/star:
@@ -1285,7 +1285,8 @@ paths:
     put:
       consumes:
       - application/json
-      description: Moves an outbox message to the trash folder.
+      description: Moves an outbox message to the trash folder or gets it back if
+        it is already in trash.
       parameters:
       - description: Outbox message ID
         in: path
@@ -1313,7 +1314,7 @@ paths:
             type: string
       security:
       - BearerAuth: []
-      summary: Move outbox message to trash
+      summary: Move outbox message to trash/untrash
       tags:
       - 06-Outbox
   /profile:
